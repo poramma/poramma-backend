@@ -1,0 +1,14 @@
+{
+    "name": "@fivision/utils",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "scripts": {
+      "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+      "date-fns": "^2.30.0",
+      "dotenv": "^16.3.1",
+      "class-transformer": "^0.5.1",
+      "class-validator": "^0.14.0"
+    }
+}

@@ -1,0 +1,1 @@
+//# sourceMappingURL=schema.ambassade.d.ts.map

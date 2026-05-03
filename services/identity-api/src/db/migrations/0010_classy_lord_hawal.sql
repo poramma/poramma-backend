@@ -1,0 +1,1 @@
+ALTER TABLE "identity"."user_profiles" ALTER COLUMN "birth_date" SET DATA TYPE varchar(20);

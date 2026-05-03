@@ -1,0 +1,1 @@
+ALTER TABLE "identity"."otps" RENAME COLUMN "user_id" TO "email_phone";

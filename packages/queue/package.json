@@ -1,0 +1,21 @@
+{
+    "name": "@fivision/queue",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+      "build": "tsc -p tsconfig.json",
+      "clean": "rimraf dist"
+    },
+    "dependencies": {
+      "bullmq": "^5.10.1",
+      "ioredis": "^5.3.2",
+      "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+      "typescript": "^5.3.3",
+      "@types/node": "^20.10.6",
+      "rimraf": "^5.0.5"
+    }
+  }
+  

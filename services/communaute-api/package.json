@@ -1,0 +1,27 @@
+{
+    "name": "communaute-api",
+    "version": "1.0.0",
+    "main": "dist/server.js",
+    "scripts": {
+      "dev": "ts-node src/server.ts",
+      "build": "tsc -p tsconfig.json",
+      "start": "node dist/server.js",
+      "lint": "eslint . --ext .ts"
+    },
+    "dependencies": {
+      "express": "^4.18.2",
+      "pg": "^8.10.0",
+      "typeorm": "^0.3.17",
+      "class-validator": "^0.14.0",
+      "class-transformer": "^0.5.1",
+      "dotenv": "^16.3.1",
+      "cors": "^2.8.5",
+      "morgan": "^1.10.0"
+    },
+    "devDependencies": {
+      "typescript": "^5.3.3",
+      "ts-node": "^10.9.2",
+      "eslint": "^8.50.0"
+    }
+  }
+  

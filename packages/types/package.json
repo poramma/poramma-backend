@@ -1,0 +1,22 @@
+{
+    "name": "@fivision/utils",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+      "build": "tsc -p tsconfig.json",
+      "clean": "rimraf dist"
+    },
+    "dependencies": {
+      "date-fns": "^3.6.0",
+      "uuid": "^9.0.1",
+      "bcryptjs": "^2.4.3"
+    },
+    "devDependencies": {
+      "typescript": "^5.3.3",
+      "@types/node": "^20.10.6",
+      "@types/bcryptjs": "^2.4.2",
+      "rimraf": "^5.0.5"
+    }
+  }
+  

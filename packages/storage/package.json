@@ -1,0 +1,20 @@
+{
+    "name": "@fivision/storage",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+      "build": "tsc -p tsconfig.json",
+      "clean": "rimraf dist"
+    },
+    "dependencies": {
+      "@aws-sdk/client-s3": "^3.596.0",
+      "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+      "typescript": "^5.3.3",
+      "@types/node": "^20.10.6",
+      "rimraf": "^5.0.5"
+    }
+  }
+  

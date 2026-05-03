@@ -1,0 +1,19 @@
+{
+    "name": "@fivision/dto",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+      "build": "tsc -p tsconfig.json",
+      "clean": "rimraf dist"
+    },
+    "dependencies": {
+      "zod": "^3.23.8"
+    },
+    "devDependencies": {
+      "typescript": "^5.3.3",
+      "@types/node": "^20.10.6",
+      "rimraf": "^5.0.5"
+    }
+  }
+  

@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "../..",          // 👈 englobe `services` + `packages`
+    "baseUrl": ".",
+    "paths": {
+      "@fivision/*": ["../../packages/*/src"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "../../packages/*/src"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,1 @@
+//# sourceMappingURL=schema.communaute.d.ts.map
