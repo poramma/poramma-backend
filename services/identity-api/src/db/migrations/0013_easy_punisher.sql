@@ -1,0 +1,1 @@
+ALTER TABLE "identity"."user_profiles" ADD COLUMN "nationality" varchar(100);

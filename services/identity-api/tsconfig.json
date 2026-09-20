@@ -2,15 +2,17 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "../..",          // 👈 englobe `services` + `packages`
+    "rootDir": "./src",
     "baseUrl": ".",
+    // Shared packages are consumed as built output (build.sh builds
+    // packages/* before the services), keeping rootDir limited to ./src —
+    // matches the ambassade-api / communaute-api tsconfig pattern.
     "paths": {
-      "@fivision/*": ["../../packages/*/src"]
+      "@poramma/*": ["../../packages/*/dist"]
     }
   },
   "include": [
-    "src/**/*",
-    "../../packages/*/src"
+    "src/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }

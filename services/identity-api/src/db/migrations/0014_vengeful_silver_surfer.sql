@@ -1,0 +1,1 @@
+ALTER TABLE "identity"."sessions" ADD COLUMN "remember_me" boolean DEFAULT false NOT NULL;
