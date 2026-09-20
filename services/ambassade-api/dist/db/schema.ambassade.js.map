@@ -1,1 +1,1 @@
-{"version":3,"file":"schema.ambassade.js","sourceRoot":"","sources":["../../src/db/schema.ambassade.ts"],"names":[],"mappings":""}
+{"version":3,"file":"schema.ambassade.js","sourceRoot":"","sources":["../../src/db/schema.ambassade.ts"],"names":[],"mappings":";;;AAMA,4DAAyD;AAE5C,QAAA,SAAS,GAAG,+BAAc,CAAC,SAAS,CAAC;AACrC,QAAA,QAAQ,GAAG,+BAAc,CAAC,QAAQ,CAAC;AACnC,QAAA,WAAW,GAAG,+BAAc,CAAC,WAAW,CAAC;AACzC,QAAA,gBAAgB,GAAG,+BAAc,CAAC,gBAAgB,CAAC;AACnD,QAAA,iBAAiB,GAAG,+BAAc,CAAC,iBAAiB,CAAC;AACrD,QAAA,YAAY,GAAG,+BAAc,CAAC,YAAY,CAAC"}

@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const etudiants_controller_1 = require("./etudiants.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.get("/etudiants/search", (0, middleware_1.requirePermission)("etudiant:read"), (0, utils_1.asyncHandler)(etudiants_controller_1.searchEtudiants));
+router.post("/etudiants/estimate", (0, middleware_1.requirePermission)("etudiant:read"), (0, utils_1.asyncHandler)(etudiants_controller_1.estimateEtudiants));
+router.get("/etudiants", (0, middleware_1.requirePermission)("etudiant:read"), (0, utils_1.asyncHandler)(etudiants_controller_1.listEtudiants));
+router.get("/etudiants/:id", (0, utils_1.asyncHandler)(etudiants_controller_1.getEtudiant));
+router.get("/etudiants/:id/documents", (0, utils_1.asyncHandler)(etudiants_controller_1.getEtudiantDocuments));
+router.get("/etudiants/:id/audit", (0, utils_1.asyncHandler)(etudiants_controller_1.getEtudiantAudit));
+router.post("/etudiants/:id/validate", (0, middleware_1.requirePermission)("etudiant:validate"), (0, utils_1.asyncHandler)(etudiants_controller_1.validateEtudiant));
+router.post("/etudiants/:id/reject", (0, middleware_1.requirePermission)("etudiant:validate"), (0, utils_1.asyncHandler)(etudiants_controller_1.rejectEtudiant));
+router.post("/etudiants/:id/suspend", (0, middleware_1.requirePermission)("etudiant:validate"), (0, utils_1.asyncHandler)(etudiants_controller_1.suspendEtudiant));
+router.post("/etudiants/:id/assign-inue", (0, middleware_1.requirePermission)("etudiant:validate"), (0, utils_1.asyncHandler)(etudiants_controller_1.assignInue));
+exports.default = router;
+//# sourceMappingURL=etudiants.routes.js.map

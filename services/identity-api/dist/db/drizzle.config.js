@@ -36,13 +36,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const drizzle_kit_1 = require("drizzle-kit");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
-console.log("DATABASE_URL", process.env.DATABASE_URL);
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+    throw new Error("Missing required environment variable DATABASE_URL. Set it in services/identity-api/.env.");
+}
 exports.default = (0, drizzle_kit_1.defineConfig)({
     schema: "./src/db/schema.identity.ts",
     out: "./src/db/migrations",
     dialect: "postgresql",
     dbCredentials: {
-        url: process.env.DATABASE_URL,
+        url: connectionString,
     },
 });
 //# sourceMappingURL=drizzle.config.js.map

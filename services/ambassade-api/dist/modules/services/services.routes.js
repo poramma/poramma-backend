@@ -1,0 +1,27 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const services_controller_1 = require("./services.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.get("/services", (0, middleware_1.requirePermission)("service:read"), (0, utils_1.asyncHandler)(services_controller_1.listServices));
+router.get("/services/:id", (0, middleware_1.requirePermission)("service:read"), (0, utils_1.asyncHandler)(services_controller_1.getService));
+router.post("/services", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.createService));
+router.patch("/services/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.updateService));
+router.delete("/services/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.deleteService));
+router.get("/services/:id/sub-services", (0, middleware_1.requirePermission)("service:read"), (0, utils_1.asyncHandler)(services_controller_1.getServiceSubServices));
+router.get("/sub-services/:id", (0, middleware_1.requirePermission)("service:read"), (0, utils_1.asyncHandler)(services_controller_1.getSubService));
+router.post("/sub-services", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.createSubService));
+router.patch("/sub-services/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.updateSubService));
+router.post("/sub-services/:id/schedules", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.createSchedule));
+router.patch("/schedules/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.updateSchedule));
+router.delete("/schedules/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.deleteSchedule));
+router.post("/sub-services/:id/exceptions", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.createException));
+router.delete("/exceptions/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.deleteException));
+router.post("/sub-services/:id/requirements", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.addRequirement));
+router.patch("/requirements/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.updateRequirement));
+router.delete("/requirements/:id", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(services_controller_1.removeRequirement));
+exports.default = router;
+//# sourceMappingURL=services.routes.js.map

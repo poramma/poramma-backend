@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const reception_controller_1 = require("./reception.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.get("/reception/summary", (0, middleware_1.requirePermission)("walkin:read"), (0, utils_1.asyncHandler)(reception_controller_1.getSummary));
+router.get("/reception/appointments", (0, middleware_1.requirePermission)("rdv:checkin"), (0, utils_1.asyncHandler)(reception_controller_1.listAppointments));
+router.get("/reception/appointments/lookup", (0, middleware_1.requirePermission)("rdv:checkin"), (0, utils_1.asyncHandler)(reception_controller_1.lookupTicket));
+router.post("/reception/appointments/:id/validate", (0, middleware_1.requirePermission)("rdv:checkin"), (0, utils_1.asyncHandler)(reception_controller_1.validateArrival));
+router.post("/reception/urgences", (0, middleware_1.requirePermission)("rdv:create-urgence"), (0, utils_1.asyncHandler)(reception_controller_1.createUrgence));
+router.get("/reception/walk-ins", (0, middleware_1.requirePermission)("walkin:read"), (0, utils_1.asyncHandler)(reception_controller_1.listWalkIns));
+router.post("/reception/walk-ins", (0, middleware_1.requirePermission)("walkin:manage"), (0, utils_1.asyncHandler)(reception_controller_1.createWalkIn));
+router.patch("/reception/walk-ins/:id", (0, middleware_1.requirePermission)("walkin:manage"), (0, utils_1.asyncHandler)(reception_controller_1.updateWalkIn));
+router.post("/reception/walk-ins/:id/create-dossier", (0, middleware_1.requirePermission)("walkin:manage"), (0, utils_1.asyncHandler)(reception_controller_1.createDossier));
+router.get("/reception/members", (0, middleware_1.requirePermission)("walkin:manage"), (0, utils_1.asyncHandler)(reception_controller_1.searchMembers));
+exports.default = router;
+//# sourceMappingURL=reception.routes.js.map

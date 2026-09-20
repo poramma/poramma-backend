@@ -1,2 +1,24 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const rendezvous_controller_1 = require("./rendezvous.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.get("/agenda-slots", (0, middleware_1.requirePermission)("rdv:read"), (0, utils_1.asyncHandler)(rendezvous_controller_1.listAgendaSlots));
+router.get("/agenda-slots/:slotId", (0, middleware_1.requirePermission)("rdv:read"), (0, utils_1.asyncHandler)(rendezvous_controller_1.getAgendaSlot));
+router.post("/rendez-vous/print-daily", (0, middleware_1.requirePermission)("rdv:print-daily"), (0, utils_1.asyncHandler)(rendezvous_controller_1.printDaily));
+router.get("/rendez-vous/print-history", (0, middleware_1.requirePermission)("rdv:print-daily"), (0, utils_1.asyncHandler)(rendezvous_controller_1.printHistory));
+router.post("/rendez-vous/print/:id/reprint", (0, middleware_1.requirePermission)("rdv:print-daily"), (0, utils_1.asyncHandler)(rendezvous_controller_1.reprint));
+router.get("/rendez-vous", (0, middleware_1.requirePermission)("rdv:read"), (0, utils_1.asyncHandler)(rendezvous_controller_1.listRendezVous));
+router.post("/rendez-vous", (0, middleware_1.requirePermission)("rdv:create"), (0, utils_1.asyncHandler)(rendezvous_controller_1.createRendezVous));
+router.post("/rendez-vous/urgence", (0, middleware_1.requirePermission)("rdv:create-urgence"), (0, utils_1.asyncHandler)(rendezvous_controller_1.createUrgence));
+router.patch("/rendez-vous/:id/status", (0, middleware_1.requirePermission)("rdv:update"), (0, utils_1.asyncHandler)(rendezvous_controller_1.updateStatus));
+router.post("/rendez-vous/:id/check-in", (0, middleware_1.requirePermission)("rdv:update"), (0, utils_1.asyncHandler)(rendezvous_controller_1.checkIn));
+router.post("/rendez-vous/:id/complete", (0, middleware_1.requirePermission)("rdv:update"), (0, utils_1.asyncHandler)(rendezvous_controller_1.complete));
+router.post("/rendez-vous/:id/cancel", (0, middleware_1.requirePermission)("rdv:cancel"), (0, utils_1.asyncHandler)(rendezvous_controller_1.cancel));
+router.get("/rendez-vous/:id/notes", (0, utils_1.asyncHandler)(rendezvous_controller_1.listNotes));
+router.post("/rendez-vous/:id/notes", (0, utils_1.asyncHandler)(rendezvous_controller_1.addNote));
+exports.default = router;
 //# sourceMappingURL=rendezvous.routes.js.map
