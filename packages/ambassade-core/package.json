@@ -1,0 +1,21 @@
+{
+  "name": "@poramma/ambassade-core",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@poramma/mailer": "workspace:*",
+    "@poramma/storage": "workspace:*",
+    "@poramma/utils": "workspace:*",
+    "drizzle-orm": "^0.44.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "@types/node": "^20.19.11",
+    "rimraf": "^5.0.5"
+  }
+}
