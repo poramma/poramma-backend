@@ -2,7 +2,13 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
       "outDir": "./dist",
-      "rootDir": "./src"
+      "rootDir": "./src",
+      "baseUrl": ".",
+      // Resolve sibling packages through their built output: compiling their
+      // sources here would put files outside this package's rootDir.
+      "paths": {
+        "@poramma/*": ["../*/dist"]
+      }
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "dist"]

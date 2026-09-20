@@ -1,0 +1,1 @@
+ALTER TABLE "ambassade"."demande_histories" ADD COLUMN "action" varchar(20) DEFAULT 'STATUS_CHANGE' NOT NULL;

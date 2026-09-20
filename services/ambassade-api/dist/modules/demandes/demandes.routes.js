@@ -1,2 +1,21 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const demandes_controller_1 = require("./demandes.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.get("/demandes", (0, middleware_1.requirePermission)("demande:read"), (0, utils_1.asyncHandler)(demandes_controller_1.listDemandes));
+router.get("/demandes/:id", (0, utils_1.asyncHandler)(demandes_controller_1.getDemande));
+router.post("/demandes", (0, middleware_1.requirePermission)("demande:create"), (0, utils_1.asyncHandler)(demandes_controller_1.createDemande));
+router.patch("/demandes/:id/status", (0, utils_1.asyncHandler)(demandes_controller_1.updateStatus));
+router.post("/demandes/:id/assign", (0, middleware_1.requirePermission)("demande:assign"), (0, utils_1.asyncHandler)(demandes_controller_1.assignAgent));
+router.get("/demandes/:id/history", (0, utils_1.asyncHandler)(demandes_controller_1.listHistory));
+router.get("/demandes/:id/comments", (0, utils_1.asyncHandler)(demandes_controller_1.listComments));
+router.post("/demandes/:id/comments", (0, utils_1.asyncHandler)(demandes_controller_1.addComment));
+router.get("/demandes/:id/requirements", (0, utils_1.asyncHandler)(demandes_controller_1.listRequirements));
+router.get("/demandes/:id/documents", (0, utils_1.asyncHandler)(demandes_controller_1.listDemandeDocuments));
+router.patch("/demandes/requirements/:requirementId", (0, middleware_1.requirePermission)("demande:validate"), (0, utils_1.asyncHandler)(demandes_controller_1.validateRequirement));
+exports.default = router;
 //# sourceMappingURL=demandes.routes.js.map

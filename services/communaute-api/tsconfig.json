@@ -2,7 +2,13 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
       "outDir": "./dist",
-      "rootDir": "./src"
+      "rootDir": "./src",
+      "baseUrl": ".",
+      // Shared packages are consumed as built output (build.sh builds
+      // packages/* before the services), keeping rootDir limited to ./src.
+      "paths": {
+        "@poramma/*": ["../../packages/*/dist"]
+      }
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "dist"]

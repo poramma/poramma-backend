@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const rendezvous_controller_1 = require("./rendezvous.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+const limit = (0, middleware_1.rateLimit)("rdv", 10, 3600);
+router.get("/rendez-vous/slots", middleware_1.requireValidatedProfile, (0, utils_1.asyncHandler)(rendezvous_controller_1.listSlots));
+router.get("/rendez-vous/available-dates", middleware_1.requireValidatedProfile, (0, utils_1.asyncHandler)(rendezvous_controller_1.listAvailableDates));
+router.get("/rendez-vous", (0, utils_1.asyncHandler)(rendezvous_controller_1.listMine));
+router.post("/rendez-vous", middleware_1.requireValidatedProfile, limit, (0, utils_1.asyncHandler)(rendezvous_controller_1.book));
+router.get("/rendez-vous/:id", (0, utils_1.asyncHandler)(rendezvous_controller_1.getOne));
+router.post("/rendez-vous/:id/reschedule", middleware_1.requireValidatedProfile, limit, (0, utils_1.asyncHandler)(rendezvous_controller_1.reschedule));
+router.post("/rendez-vous/:id/cancel", limit, (0, utils_1.asyncHandler)(rendezvous_controller_1.cancel));
+router.get("/rendez-vous/:id/notes", (0, utils_1.asyncHandler)(rendezvous_controller_1.listNotes));
+router.post("/rendez-vous/:id/notes", middleware_1.requireValidatedProfile, (0, middleware_1.rateLimit)("messages", 60, 3600), (0, utils_1.asyncHandler)(rendezvous_controller_1.addNote));
+exports.default = router;
+//# sourceMappingURL=rendezvous.routes.js.map

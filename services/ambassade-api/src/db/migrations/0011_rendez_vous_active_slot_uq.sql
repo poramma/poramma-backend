@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "rendez_vous_active_slot_uq" ON "ambassade"."rendez_vous" USING btree ("slot_id") WHERE "ambassade"."rendez_vous"."slot_id" is not null and "ambassade"."rendez_vous"."status" not in ('CANCELLED_BY_USER','CANCELLED_BY_AGENT','NO_SHOW');

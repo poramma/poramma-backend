@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const agent_schedule_controller_1 = require("./agent-schedule.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.get("/agents/:id/assignments", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.listAssignments));
+router.post("/agents/:id/assignments", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.createAssignment));
+router.patch("/assignments/:assignmentId", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.updateAssignment));
+router.delete("/assignments/:assignmentId", (0, middleware_1.requirePermission)("service:admin"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.deleteAssignment));
+router.get("/agents/:id/availabilities", (0, middleware_1.requirePermission)("availability:read"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.listAvailabilities));
+router.post("/agents/:id/availabilities", (0, middleware_1.requirePermission)("availability:create"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.createAvailability));
+router.put("/agents/:id/availabilities/:availId", (0, middleware_1.requirePermission)("availability:update"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.updateAvailability));
+router.delete("/agents/:id/availabilities/:availId", (0, middleware_1.requirePermission)("availability:delete"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.deleteAvailability));
+router.get("/agents/:id/exceptions", (0, middleware_1.requirePermission)("availability:read"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.listExceptions));
+router.post("/agents/:id/exceptions", (0, middleware_1.requirePermission)("availability:create"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.createException));
+router.delete("/agents/:id/exceptions/:excId", (0, middleware_1.requirePermission)("availability:delete"), (0, utils_1.asyncHandler)(agent_schedule_controller_1.deleteException));
+exports.default = router;
+//# sourceMappingURL=agent-schedule.routes.js.map

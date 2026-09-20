@@ -2,13 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_controller_1 = require("./auth.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
 const router = (0, express_1.Router)();
-router.post("/register", auth_controller_1.register);
-router.post("/verify-otp", auth_controller_1.verifyOtp);
-router.post("/login", auth_controller_1.login);
-router.post("/refresh", auth_controller_1.refresh);
-router.post("/logout", auth_controller_1.logout);
-router.get("/me", auth_controller_1.me);
-router.patch("/profile", auth_controller_1.updateProfile);
+router.post("/register", (0, utils_1.asyncHandler)(auth_controller_1.register));
+router.post("/send-otp", (0, utils_1.asyncHandler)(auth_controller_1.sendOtp));
+router.post("/verify-otp", (0, utils_1.asyncHandler)(auth_controller_1.verifyOtp));
+router.post("/login", (0, utils_1.asyncHandler)(auth_controller_1.login));
+router.post("/refresh", (0, utils_1.asyncHandler)(auth_controller_1.refresh));
+router.post("/forgot-password", (0, utils_1.asyncHandler)(auth_controller_1.forgotPassword));
+router.post("/reset-password", (0, utils_1.asyncHandler)(auth_controller_1.resetPassword));
+router.post("/logout", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.logout));
+router.get("/me", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.me));
+router.patch("/profile", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.updateProfile));
+router.get("/roles", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.getRoles));
+router.get("/permissions", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.getPermissions));
+router.post("/switch-role", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.switchRole));
 exports.default = router;
 //# sourceMappingURL=auth.routes.js.map

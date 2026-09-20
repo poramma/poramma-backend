@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import * as service from "./users.service";
 import {
   updatePersonalInfoDto,
@@ -6,7 +6,17 @@ import {
   updateStudentProfileDto,
   updateWorkerProfileDto,
   updateUserStatusDto,
+  enrollStudentDto,
 } from "./dto";
+import { ok } from "@poramma/dto";
+
+/** :id doit être l'appelant lui-même — voir users.routes.ts. */
+export function requireSelf(req: Request, res: Response, next: NextFunction) {
+  if (req.params.id !== (req as any).userId) {
+    return res.status(403).json({ error: "Accès non autorisé à ce profil" });
+  }
+  next();
+}
 
 export async function getUser(req: Request, res: Response) {
   try {
@@ -86,5 +96,19 @@ export async function updateWorkerProfile(req: Request, res: Response) {
     res.json(result);
   } catch (err: any) {
     res.status(404).json({ error: err.message });
+  }
+}
+
+// POST /users/students/enroll — walk-in enrollment by an authorized agent.
+export async function enrollStudent(req: Request, res: Response) {
+  const parsed = enrollStudentDto.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ errors: parsed.error.flatten() });
+
+  try {
+    const enrolledBy = (req as any).userId;
+    const student = await service.enrollStudent(parsed.data, enrolledBy);
+    res.status(201).json(ok(student, undefined, "Étudiant enrôlé avec succès."));
+  } catch (err: any) {
+    res.status(err.statusCode ?? 409).json({ error: err.message });
   }
 }

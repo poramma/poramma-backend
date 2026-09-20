@@ -1,5 +1,5 @@
-mkdir -p fivision-backend/{infra/{initdb,nginx},services/{identity-api/src/{modules/{auth,users,otp,sessions},db/migrations,shared,config},ambassade-api/src/{modules/{demandes,rendezvous,payments,messaging},db/migrations,shared,config},communaute-api/src/{modules/{profiles,documents,inue},db/migrations,shared,config}},packages/{dto/src,types/src,utils/src,storage/src,queue/src,mailer/src,notifier/src},tests/{e2e,contracts}} && \
-cd fivision-backend && \
+mkdir -p poramma-backend/{infra/{initdb,nginx},services/{identity-api/src/{modules/{auth,users,otp,sessions},db/migrations,shared,config},ambassade-api/src/{modules/{demandes,rendezvous,payments,messaging},db/migrations,shared,config},communaute-api/src/{modules/{profiles,documents,inue},db/migrations,shared,config}},packages/{dto/src,types/src,utils/src,storage/src,queue/src,mailer/src,notifier/src},tests/{e2e,contracts}} && \
+cd poramma-backend && \
 touch package.json pnpm-workspace.yaml docker-compose.yml .env && \
 touch infra/initdb/01-create-schemas.sql infra/nginx/nginx.conf && \
 touch services/identity-api/{Dockerfile,.env} && \
