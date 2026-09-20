@@ -1,0 +1,26 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const communication_controller_1 = require("./communication.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.post("/communication/campagnes/estimate", (0, middleware_1.requirePermission)("comm:create"), (0, utils_1.asyncHandler)(communication_controller_1.estimateRecipients));
+router.get("/communication/campagnes", (0, middleware_1.requirePermission)("comm:read"), (0, utils_1.asyncHandler)(communication_controller_1.listCampagnes));
+router.post("/communication/campagnes", (0, middleware_1.requirePermission)("comm:create"), (0, utils_1.asyncHandler)(communication_controller_1.createCampagne));
+router.get("/communication/campagnes/:id", (0, middleware_1.requirePermission)("comm:read"), (0, utils_1.asyncHandler)(communication_controller_1.getCampagne));
+router.patch("/communication/campagnes/:id", (0, middleware_1.requirePermission)("comm:create"), (0, utils_1.asyncHandler)(communication_controller_1.updateCampagne));
+router.post("/communication/campagnes/:id/send", (0, middleware_1.requirePermission)("comm:send"), (0, utils_1.asyncHandler)(communication_controller_1.sendCampagne));
+router.patch("/communication/campagnes/:id/schedule", (0, middleware_1.requirePermission)("comm:send"), (0, utils_1.asyncHandler)(communication_controller_1.scheduleCampagne));
+router.patch("/communication/campagnes/:id/cancel", (0, middleware_1.requirePermission)("comm:send"), (0, utils_1.asyncHandler)(communication_controller_1.cancelCampagne));
+router.post("/communication/campagnes/:id/duplicate", (0, middleware_1.requirePermission)("comm:create"), (0, utils_1.asyncHandler)(communication_controller_1.duplicateCampagne));
+router.get("/communication/campagnes/:id/deliveries", (0, middleware_1.requirePermission)("comm:read"), (0, utils_1.asyncHandler)(communication_controller_1.listDeliveries));
+router.post("/communication/campagnes/:id/resend-failed", (0, middleware_1.requirePermission)("comm:send"), (0, utils_1.asyncHandler)(communication_controller_1.resendToFailed));
+router.get("/communication/campagnes/:id/files/:fileId", (0, middleware_1.requirePermission)("comm:read"), (0, utils_1.asyncHandler)(communication_controller_1.getCampagneFile));
+router.post("/communication/campagnes/:id/attachments", (0, middleware_1.requirePermission)("comm:create"), communication_controller_1.upload.single("file"), (0, utils_1.asyncHandler)(communication_controller_1.uploadAttachment));
+router.delete("/communication/campagnes/:id/attachments/:attachmentId", (0, middleware_1.requirePermission)("comm:create"), (0, utils_1.asyncHandler)(communication_controller_1.removeAttachment));
+router.patch("/communication/campagnes/:id/attachments/reorder", (0, middleware_1.requirePermission)("comm:create"), (0, utils_1.asyncHandler)(communication_controller_1.reorderAttachments));
+router.patch("/communication/campagnes/:id/attachments/:attachmentId", (0, middleware_1.requirePermission)("comm:create"), (0, utils_1.asyncHandler)(communication_controller_1.updateAttachment));
+exports.default = router;
+//# sourceMappingURL=communication.routes.js.map

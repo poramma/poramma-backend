@@ -1,0 +1,18 @@
+# Dépendances (installées par pnpm, jamais versionnées)
+node_modules/
+
+# Secrets locaux : identifiants SMTP réels (surcharge de .env, voir docker-compose.yml)
+.env.smtp
+
+# Fichiers d'environnement locaux propres à une machine ou à un déploiement (les .env versionnés ne contiennent que des valeurs de dev)
+.env.local
+.env.*.local
+.env.production
+
+# Sortie de l'outillage et de l'éditeur
+*.stackdump
+*.log
+.claude/
+.vscode/
+.idea/
+.DS_Store

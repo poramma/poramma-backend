@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const roles_controller_1 = require("./roles.controller");
+const middleware_1 = require("../../shared/middleware");
+const utils_1 = require("@poramma/utils");
+const router = (0, express_1.Router)();
+router.use(middleware_1.requireAuth);
+router.get("/roles", (0, utils_1.asyncHandler)(roles_controller_1.getRoles));
+router.get("/roles/:id", (0, utils_1.asyncHandler)(roles_controller_1.getRole));
+router.post("/roles", (0, middleware_1.requirePermission)("user:admin"), (0, utils_1.asyncHandler)(roles_controller_1.createRole));
+router.patch("/roles/:id", (0, middleware_1.requirePermission)("user:admin"), (0, utils_1.asyncHandler)(roles_controller_1.updateRole));
+router.delete("/roles/:id", (0, middleware_1.requirePermission)("user:admin"), (0, utils_1.asyncHandler)(roles_controller_1.deleteRole));
+router.get("/permissions", (0, utils_1.asyncHandler)(roles_controller_1.getPermissions));
+router.post("/roles/:roleId/permissions", (0, middleware_1.requirePermission)("user:admin"), (0, utils_1.asyncHandler)(roles_controller_1.assignPermissionToRole));
+router.delete("/roles/:roleId/permissions/:permissionCode", (0, middleware_1.requirePermission)("user:admin"), (0, utils_1.asyncHandler)(roles_controller_1.removePermissionFromRole));
+router.post("/users/:userId/roles", (0, middleware_1.requirePermission)("user:admin"), (0, utils_1.asyncHandler)(roles_controller_1.assignRoleToUser));
+router.delete("/users/:userId/roles/:roleId", (0, middleware_1.requirePermission)("user:admin"), (0, utils_1.asyncHandler)(roles_controller_1.removeRoleFromUser));
+exports.default = router;
+//# sourceMappingURL=roles.routes.js.map

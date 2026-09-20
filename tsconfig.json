@@ -16,13 +16,13 @@
       "sourceMap": true,
       "baseUrl": ".",
       "paths": {
-        "@fivision/dto": ["packages/dto/src"],
-        "@fivision/types": ["packages/types/src"],
-        "@fivision/utils": ["packages/utils/src"],
-        "@fivision/storage": ["packages/storage/src"],
-        "@fivision/queue": ["packages/queue/src"],
-        "@fivision/mailer": ["packages/mailer/src"],
-        "@fivision/notifier": ["packages/notifier/src"]
+        "@poramma/dto": ["packages/dto/src"],
+        "@poramma/types": ["packages/types/src"],
+        "@poramma/utils": ["packages/utils/src"],
+        "@poramma/storage": ["packages/storage/src"],
+        "@poramma/queue": ["packages/queue/src"],
+        "@poramma/mailer": ["packages/mailer/src"],
+        "@poramma/notifier": ["packages/notifier/src"]
       }
     },
     "include": [

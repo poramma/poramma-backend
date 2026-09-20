@@ -1,0 +1,20 @@
+import { Request, Response } from "express";
+import multer from "multer";
+export declare const upload: multer.Multer;
+export declare function listCampagnes(req: Request, res: Response): Promise<void>;
+export declare function getCampagne(req: Request, res: Response): Promise<void>;
+export declare function createCampagne(req: Request, res: Response): Promise<void>;
+export declare function updateCampagne(req: Request, res: Response): Promise<void>;
+export declare function sendCampagne(req: Request, res: Response): Promise<void>;
+export declare function scheduleCampagne(req: Request, res: Response): Promise<void>;
+export declare function cancelCampagne(req: Request, res: Response): Promise<void>;
+export declare function duplicateCampagne(req: Request, res: Response): Promise<void>;
+export declare function listDeliveries(req: Request, res: Response): Promise<void>;
+export declare function resendToFailed(req: Request, res: Response): Promise<void>;
+export declare function uploadAttachment(req: Request, res: Response): Promise<void>;
+export declare function getCampagneFile(req: Request, res: Response): Promise<void>;
+export declare function removeAttachment(req: Request, res: Response): Promise<void>;
+export declare function updateAttachment(req: Request, res: Response): Promise<void>;
+export declare function reorderAttachments(req: Request, res: Response): Promise<void>;
+export declare function estimateRecipients(req: Request, res: Response): Promise<void>;
+//# sourceMappingURL=communication.controller.d.ts.map

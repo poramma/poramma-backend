@@ -1,0 +1,1 @@
+{"version":3,"file":"schema.communication.js","sourceRoot":"","sources":["../../src/db/schema.communication.ts"],"names":[],"mappings":";;;AAKA,4DAA+E;AAElE,QAAA,SAAS,GAAG,gCAAe,CAAC,SAAS,CAAC;AACtC,QAAA,mBAAmB,GAAG,gCAAe,CAAC,mBAAmB,CAAC;AAC1D,QAAA,kBAAkB,GAAG,gCAAe,CAAC,kBAAkB,CAAC;AACxD,QAAA,oBAAoB,GAAG,gCAAe,CAAC,oBAAoB,CAAC;AAC5D,QAAA,aAAa,GAAG,oCAAmB,CAAC,aAAa,CAAC"}

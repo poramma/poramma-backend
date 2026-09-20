@@ -5,9 +5,11 @@ dotenv.config();
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { PoolConfig } from "pg";
+import { requireEnv } from "@poramma/utils";
 
-// Lire la variable d'environnement DATABASE_URL (ex: postgres://user:pass@host:5432/db)
-const connectionString = process.env.DATABASE_URL || "postgres://fivision:fivision@localhost:5432/fivision";
+// DATABASE_URL (ex: postgres://user:pass@host:5432/db) is required: falling back
+// to a hardcoded default silently connected the service to the wrong database.
+const connectionString = requireEnv("DATABASE_URL");
 
 // Optionnel : config pool (tu peux ajuster selon ton environnement)
 const poolConfig: PoolConfig = {

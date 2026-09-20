@@ -1,0 +1,1 @@
+ALTER TABLE "ambassade"."etudiants" ADD COLUMN "submitted_at" timestamp;

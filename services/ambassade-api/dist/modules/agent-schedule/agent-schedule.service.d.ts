@@ -1,0 +1,237 @@
+import { agentAvailabilities } from "../../db/schema.rendezvous";
+export declare function listAssignments(agentId: string): Promise<{
+    subService: {
+        basePrice: number | null;
+        service: {
+            id: string;
+            name: string;
+            code: string;
+            description: string | null;
+            icon: string | null;
+            order: number | null;
+            active: boolean | null;
+            requiresAppointment: boolean | null;
+            isCultural: boolean;
+            createdAt: Date | null;
+        } | undefined;
+        id: string;
+        serviceId: string;
+        name: string;
+        code: string;
+        description: string | null;
+        active: boolean | null;
+        currency: string | null;
+        slaDays: number;
+        allowCustomRequest: boolean | null;
+        requiresInPerson: boolean | null;
+        createdAt: Date | null;
+    } | null;
+    id: string;
+    active: boolean | null;
+    subServiceId: string;
+    validFrom: string | null;
+    validUntil: string | null;
+    assignedAt: Date | null;
+    isPrimary: boolean | null;
+    agentId: string;
+    assignedBy: string | null;
+    maxDailyAppointments: number | null;
+    notes: string | null;
+}[]>;
+export declare function createAssignment(agentId: string, data: {
+    subServiceId: string;
+    validFrom?: string | null;
+    validUntil?: string | null;
+    isPrimary?: boolean;
+    maxDailyAppointments?: number | null;
+    notes?: string | null;
+}, assignedBy: string): Promise<{
+    subService: {
+        basePrice: number | null;
+        service: {
+            id: string;
+            name: string;
+            code: string;
+            description: string | null;
+            icon: string | null;
+            order: number | null;
+            active: boolean | null;
+            requiresAppointment: boolean | null;
+            isCultural: boolean;
+            createdAt: Date | null;
+        } | undefined;
+        id: string;
+        serviceId: string;
+        name: string;
+        code: string;
+        description: string | null;
+        active: boolean | null;
+        currency: string | null;
+        slaDays: number;
+        allowCustomRequest: boolean | null;
+        requiresInPerson: boolean | null;
+        createdAt: Date | null;
+    } | null;
+    id: string;
+    active: boolean | null;
+    subServiceId: string;
+    validFrom: string | null;
+    validUntil: string | null;
+    assignedAt: Date | null;
+    isPrimary: boolean | null;
+    agentId: string;
+    assignedBy: string | null;
+    maxDailyAppointments: number | null;
+    notes: string | null;
+}>;
+export declare function updateAssignment(assignmentId: string, data: Partial<{
+    subServiceId: string;
+    validFrom: string | null;
+    validUntil: string | null;
+    isPrimary: boolean;
+    maxDailyAppointments: number | null;
+    notes: string | null;
+    active: boolean;
+}>): Promise<{
+    subService: {
+        basePrice: number | null;
+        service: {
+            id: string;
+            name: string;
+            code: string;
+            description: string | null;
+            icon: string | null;
+            order: number | null;
+            active: boolean | null;
+            requiresAppointment: boolean | null;
+            isCultural: boolean;
+            createdAt: Date | null;
+        } | undefined;
+        id: string;
+        serviceId: string;
+        name: string;
+        code: string;
+        description: string | null;
+        active: boolean | null;
+        currency: string | null;
+        slaDays: number;
+        allowCustomRequest: boolean | null;
+        requiresInPerson: boolean | null;
+        createdAt: Date | null;
+    } | null;
+    id: string;
+    active: boolean | null;
+    subServiceId: string;
+    validFrom: string | null;
+    validUntil: string | null;
+    assignedAt: Date | null;
+    isPrimary: boolean | null;
+    agentId: string;
+    assignedBy: string | null;
+    maxDailyAppointments: number | null;
+    notes: string | null;
+}>;
+export declare function deleteAssignment(assignmentId: string): Promise<void>;
+export declare function listAvailabilities(agentId: string, date?: string): Promise<{
+    id: string;
+    agentId: string;
+    dayOfWeek: number;
+    startTime: string | null;
+    endTime: string | null;
+    isAvailable: boolean | null;
+    validFrom: string | null;
+    validUntil: string | null;
+}[]>;
+export declare function createAvailability(agentId: string, data: {
+    dayOfWeek: number;
+    startTime?: string | null;
+    endTime?: string | null;
+    isAvailable?: boolean;
+    validFrom?: string | null;
+    validUntil?: string | null;
+}): Promise<{
+    id: string;
+    dayOfWeek: number;
+    startTime: string | null;
+    endTime: string | null;
+    validFrom: string | null;
+    validUntil: string | null;
+    agentId: string;
+    isAvailable: boolean | null;
+} | {
+    warning: string;
+    id: string;
+    dayOfWeek: number;
+    startTime: string | null;
+    endTime: string | null;
+    validFrom: string | null;
+    validUntil: string | null;
+    agentId: string;
+    isAvailable: boolean | null;
+}>;
+export declare function updateAvailability(availabilityId: string, data: Partial<typeof agentAvailabilities.$inferInsert>): Promise<{
+    id: string;
+    agentId: string;
+    dayOfWeek: number;
+    startTime: string | null;
+    endTime: string | null;
+    isAvailable: boolean | null;
+    validFrom: string | null;
+    validUntil: string | null;
+} | {
+    warning: string;
+    id: string;
+    agentId: string;
+    dayOfWeek: number;
+    startTime: string | null;
+    endTime: string | null;
+    isAvailable: boolean | null;
+    validFrom: string | null;
+    validUntil: string | null;
+}>;
+export declare function deleteAvailability(availabilityId: string): Promise<void>;
+export declare function listExceptions(agentId: string, date?: string, from?: string): Promise<{
+    id: string;
+    agentId: string;
+    date: string;
+    type: string;
+    reason: string;
+    isFullDay: boolean | null;
+    startTime: string | null;
+    endTime: string | null;
+    createdBy: string | null;
+    createdAt: Date | null;
+}[]>;
+export declare function createException(agentId: string, data: {
+    date: string;
+    type: string;
+    reason: string;
+    isFullDay?: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+}, createdBy: string): Promise<{
+    id: string;
+    createdAt: Date | null;
+    date: string;
+    startTime: string | null;
+    endTime: string | null;
+    type: string;
+    reason: string;
+    createdBy: string | null;
+    agentId: string;
+    isFullDay: boolean | null;
+} | {
+    warning: string;
+    id: string;
+    createdAt: Date | null;
+    date: string;
+    startTime: string | null;
+    endTime: string | null;
+    type: string;
+    reason: string;
+    createdBy: string | null;
+    agentId: string;
+    isFullDay: boolean | null;
+}>;
+export declare function deleteException(exceptionId: string): Promise<void>;
+//# sourceMappingURL=agent-schedule.service.d.ts.map

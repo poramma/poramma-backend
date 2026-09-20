@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: fivision-db
+    container_name: poramma-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -14,13 +14,15 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: fivision-redis
+    container_name: poramma-redis
     ports:
       - "6379:6379"
 
   minio:
-    image: minio/minio:latest
-    container_name: fivision-minio
+    # Docker Hub's minio/minio repo is no longer publicly pullable (MinIO Inc.
+    # moved distribution to quay.io) — pull access denied otherwise.
+    image: quay.io/minio/minio:latest
+    container_name: poramma-minio
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -33,7 +35,7 @@ services:
 
   mailhog:
     image: mailhog/mailhog
-    container_name: fivision-mailhog
+    container_name: poramma-mailhog
     ports:
       - "1025:1025"
       - "8025:8025"
@@ -42,8 +44,16 @@ services:
     build:
       context: . # <-- Racine du monorepo
       dockerfile: services/identity-api/Dockerfile
-    container_name: fivision-identity
-    env_file: .env
+    container_name: poramma-identity
+    env_file:
+      - .env
+      # Identifiants SMTP réels (git-ignorés) : surchargent SMTP_* de .env quand le fichier existe.
+      - path: .env.smtp
+        required: false
+    environment:
+      # PORT cannot live in the shared .env: all three services read the same
+      # file, so it is set per-service here to match the Dockerfile EXPOSE.
+      PORT: 4001
     depends_on:
       - db
       - redis
@@ -51,14 +61,20 @@ services:
     ports:
       - "4001:4001"
     volumes:
-      - ./services/identity-api/dist:/app/services/identity-api/dist
+      - ./services/identity-api/dist:/app/dist
 
   ambassade-api:
     build:
       context: . # <-- Racine du monorepo
       dockerfile: services/ambassade-api/Dockerfile
-    container_name: fivision-ambassade
-    env_file: .env
+    container_name: poramma-ambassade
+    env_file:
+      - .env
+      # Identifiants SMTP réels (git-ignorés) : surchargent SMTP_* de .env quand le fichier existe.
+      - path: .env.smtp
+        required: false
+    environment:
+      PORT: 4002
     depends_on:
       - db
       - redis
@@ -66,14 +82,20 @@ services:
     ports:
       - "4002:4002"
     volumes:
-      - ./services/ambassade-api/dist:/app/services/ambassade-api/dist
+      - ./services/ambassade-api/dist:/app/dist
 
   communaute-api:
     build:
       context: . # <-- Racine du monorepo
       dockerfile: services/communaute-api/Dockerfile
-    container_name: fivision-communaute
-    env_file: .env
+    container_name: poramma-communaute
+    env_file:
+      - .env
+      # Identifiants SMTP réels (git-ignorés) : surchargent SMTP_* de .env quand le fichier existe.
+      - path: .env.smtp
+        required: false
+    environment:
+      PORT: 4003
     depends_on:
       - db
       - redis
@@ -81,11 +103,11 @@ services:
     ports:
       - "4003:4003"
     volumes:
-      - ./services/communaute-api/dist:/app/services/communaute-api/dist
+      - ./services/communaute-api/dist:/app/dist
 
   gateway:
     image: nginx:alpine
-    container_name: fivision-gateway
+    container_name: poramma-gateway
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
