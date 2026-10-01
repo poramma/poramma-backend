@@ -18,7 +18,7 @@ export declare const createUserDto: z.ZodObject<{
 export declare const updatePersonalInfoDto: z.ZodObject<{
     firstName: z.ZodString;
     lastName: z.ZodString;
-    phone: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>;
     userType: z.ZodOptional<z.ZodEnum<["student", "worker", "migrant", "other"]>>;
     gender: z.ZodOptional<z.ZodEnum<["MALE", "FEMALE"]>>;
     bio: z.ZodOptional<z.ZodString>;
@@ -112,10 +112,17 @@ export declare const updateUserStatusDto: z.ZodObject<{
 }, {
     status: "UNVERIFIED" | "VERIFIED" | "SUSPENDED" | "PENDING";
 }>;
+export declare const verifyEmailDto: z.ZodObject<{
+    otp: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    otp: string;
+}, {
+    otp: string;
+}>;
 export declare const enrollStudentDto: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodOptional<z.ZodString>;
-    phone: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>;
     firstName: z.ZodString;
     lastName: z.ZodString;
     university: z.ZodOptional<z.ZodString>;

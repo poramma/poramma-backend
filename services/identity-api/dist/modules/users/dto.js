@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.enrollStudentDto = exports.updateUserStatusDto = exports.updateWorkerProfileDto = exports.updateStudentProfileDto = exports.updateAddressDto = exports.updatePersonalInfoDto = exports.createUserDto = void 0;
+exports.enrollStudentDto = exports.verifyEmailDto = exports.updateUserStatusDto = exports.updateWorkerProfileDto = exports.updateStudentProfileDto = exports.updateAddressDto = exports.updatePersonalInfoDto = exports.createUserDto = void 0;
 const zod_1 = require("zod");
+const dto_1 = require("@poramma/dto");
 exports.createUserDto = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(6),
@@ -11,7 +12,7 @@ exports.createUserDto = zod_1.z.object({
 exports.updatePersonalInfoDto = zod_1.z.object({
     firstName: zod_1.z.string().min(1),
     lastName: zod_1.z.string().min(1),
-    phone: zod_1.z.string().optional(),
+    phone: dto_1.optionalPhoneSchema,
     userType: zod_1.z.enum(["student", "worker", "migrant", "other"]).optional(),
     gender: zod_1.z.enum(["MALE", "FEMALE"]).optional(),
     bio: zod_1.z.string().optional(),
@@ -43,10 +44,13 @@ exports.updateWorkerProfileDto = zod_1.z.object({
 exports.updateUserStatusDto = zod_1.z.object({
     status: zod_1.z.enum(["UNVERIFIED", "PENDING", "VERIFIED", "SUSPENDED"]),
 });
+exports.verifyEmailDto = zod_1.z.object({
+    otp: zod_1.z.string().length(6),
+});
 exports.enrollStudentDto = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(8).optional(),
-    phone: zod_1.z.string().optional(),
+    phone: dto_1.optionalPhoneSchema,
     firstName: zod_1.z.string().min(1),
     lastName: zod_1.z.string().min(1),
     university: zod_1.z.string().optional(),

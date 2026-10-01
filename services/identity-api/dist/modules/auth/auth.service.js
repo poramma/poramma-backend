@@ -135,6 +135,7 @@ async function buildFullUser(userId) {
         emailVerified: user.emailVerified,
         phoneVerified: user.phoneVerified,
         status: user.status,
+        mustChangePassword: user.mustChangePassword,
         mfaEnabled: false,
         lastLoginAt: lastSession?.at ? lastSession.at.toISOString() : null,
         createdAt: user.createdAt,

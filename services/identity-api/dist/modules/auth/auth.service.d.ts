@@ -10,6 +10,7 @@ export interface FullUser {
     emailVerified: boolean;
     phoneVerified: boolean;
     status: string;
+    mustChangePassword: boolean;
     mfaEnabled: boolean;
     lastLoginAt: string | null;
     createdAt: Date | null;
@@ -46,6 +47,7 @@ export declare function register(email: string, password: string, firstName: str
     emailVerified: boolean | null;
     phoneVerified: boolean | null;
     passwordHash: string;
+    mustChangePassword: boolean;
     createdAt: Date | null;
     updatedAt: Date | null;
 }>;
@@ -73,6 +75,7 @@ export declare function updateProfile(userId: string, data: any): Promise<{
     phoneVerified: boolean | null;
     status: string | null;
     passwordHash: string;
+    mustChangePassword: boolean;
     createdAt: Date | null;
     updatedAt: Date | null;
 }>;

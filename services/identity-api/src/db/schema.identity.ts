@@ -12,6 +12,10 @@ export const users = identity.table("users", {
   phoneVerified: boolean("phone_verified").default(false),
   status: varchar("status", { length: 20 }).default("UNVERIFIED"), // enum logique
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  // Vrai pour un compte créé avec un mot de passe par défaut (enrôlement sur
+  // place) — force un changement avant d'accéder à l'application (voir
+  // frontend-community routes/RequireAuth.tsx : RequireOnboarded).
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

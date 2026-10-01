@@ -11,6 +11,7 @@ exports.users = exports.identity.table("users", {
     phoneVerified: (0, pg_core_1.boolean)("phone_verified").default(false),
     status: (0, pg_core_1.varchar)("status", { length: 20 }).default("UNVERIFIED"),
     passwordHash: (0, pg_core_1.varchar)("password_hash", { length: 255 }).notNull(),
+    mustChangePassword: (0, pg_core_1.boolean)("must_change_password").notNull().default(false),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
 });

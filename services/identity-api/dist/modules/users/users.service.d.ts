@@ -18,7 +18,10 @@ export declare function enrollStudent(data: EnrollStudentInput, enrolledBy: stri
     email: string;
     firstName: string | null;
     lastName: string | null;
+    temporaryPassword: string;
 }>;
+export declare function verifyEnrollmentEmail(userId: string, otp: string): Promise<void>;
+export declare function resendEnrollmentVerification(userId: string): Promise<void>;
 export declare function getUserById(id: string): Promise<{
     profile: {
         id: string;
@@ -59,6 +62,7 @@ export declare function getUserById(id: string): Promise<{
     phoneVerified: boolean | null;
     status: string | null;
     passwordHash: string;
+    mustChangePassword: boolean;
     createdAt: Date | null;
     updatedAt: Date | null;
 }>;
