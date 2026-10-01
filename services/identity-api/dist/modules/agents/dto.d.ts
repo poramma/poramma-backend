@@ -2,7 +2,7 @@ import { z } from "zod";
 export declare const createAgentDto: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodOptional<z.ZodString>;
-    phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    phone: z.ZodNullable<z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>>;
     firstName: z.ZodString;
     lastName: z.ZodString;
     matricule: z.ZodString;
@@ -38,7 +38,7 @@ export declare const createAgentDto: z.ZodObject<{
 }>;
 export declare const updateAgentDto: z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
-    phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    phone: z.ZodNullable<z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>>;
     firstName: z.ZodOptional<z.ZodString>;
     lastName: z.ZodOptional<z.ZodString>;
     matricule: z.ZodOptional<z.ZodString>;
@@ -72,15 +72,21 @@ export declare const listAgentsQueryDto: z.ZodObject<{
     status: z.ZodOptional<z.ZodString>;
     department: z.ZodOptional<z.ZodEnum<["CONSULAR", "ADMINISTRATIVE", "FINANCIAL", "COMMUNICATION", "SECURITY", "STUDIES"]>>;
     role: z.ZodOptional<z.ZodString>;
+    page: z.ZodOptional<z.ZodNumber>;
+    limit: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     search?: string | undefined;
     status?: string | undefined;
     department?: "CONSULAR" | "ADMINISTRATIVE" | "FINANCIAL" | "COMMUNICATION" | "SECURITY" | "STUDIES" | undefined;
+    limit?: number | undefined;
     role?: string | undefined;
+    page?: number | undefined;
 }, {
     search?: string | undefined;
     status?: string | undefined;
     department?: "CONSULAR" | "ADMINISTRATIVE" | "FINANCIAL" | "COMMUNICATION" | "SECURITY" | "STUDIES" | undefined;
+    limit?: number | undefined;
     role?: string | undefined;
+    page?: number | undefined;
 }>;
 //# sourceMappingURL=dto.d.ts.map

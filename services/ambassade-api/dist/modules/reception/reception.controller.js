@@ -60,7 +60,7 @@ const walkInListQueryDto = zod_1.z.object({
 });
 const createWalkInDto = zod_1.z.object({
     visitorName: zod_1.z.string().trim().max(150).optional(),
-    visitorPhone: zod_1.z.string().trim().max(30).nullable().optional(),
+    visitorPhone: dto_1.optionalPhoneSchema.nullable(),
     userId: zod_1.z.string().uuid().nullable().optional(),
     subServiceId: zod_1.z.string().min(1).nullable().optional(),
     category: zod_1.z.enum(svc.WALKIN_CATEGORIES),
@@ -81,7 +81,7 @@ const updateWalkInDto = zod_1.z
 const visitorDto = zod_1.z.object({
     lastName: zod_1.z.string().trim().min(1, "Le nom est obligatoire").max(100),
     firstName: zod_1.z.string().trim().min(1, "Le prénom est obligatoire").max(100),
-    phone: zod_1.z.string().trim().min(6, "Le téléphone est obligatoire").max(30),
+    phone: dto_1.requiredPhoneSchema,
     city: zod_1.z.string().trim().min(1, "La ville est obligatoire").max(100),
 });
 const createUrgenceDto = zod_1.z

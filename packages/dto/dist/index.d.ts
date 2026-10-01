@@ -144,4 +144,6 @@ export declare const apiErrorSchema: z.ZodObject<{
 export declare function ok<T>(data: T, meta?: PaginationMeta, message?: string | null): ApiResponse<T>;
 export declare function fail(code: string, message: string, details?: Record<string, string[]> | null): ApiError;
 export declare function paginationMeta(page: number, limit: number, total: number): PaginationMeta;
+export declare const optionalPhoneSchema: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>>;
+export declare const requiredPhoneSchema: z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>;
 //# sourceMappingURL=index.d.ts.map

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalPhoneSchema } from "@poramma/dto";
 
 const departmentEnum = z.enum([
   "CONSULAR",
@@ -15,7 +16,7 @@ const departmentEnum = z.enum([
 export const createAgentDto = z.object({
   email: z.string().email(),
   password: z.string().min(8).optional(),
-  phone: z.string().nullable().optional(),
+  phone: optionalPhoneSchema.nullable(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   matricule: z.string().min(1),
@@ -31,7 +32,7 @@ export const createAgentDto = z.object({
 // role changes, not two that could disagree.
 export const updateAgentDto = z.object({
   email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
+  phone: optionalPhoneSchema.nullable(),
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   matricule: z.string().min(1).optional(),
@@ -46,4 +47,6 @@ export const listAgentsQueryDto = z.object({
   status: z.string().optional(),
   department: departmentEnum.optional(),
   role: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });

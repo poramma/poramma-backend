@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalPhoneSchema } from "@poramma/dto";
 
 // Registration
 export const registerDto = z.object({
@@ -18,7 +19,7 @@ export const verifyOtpDto = z.object({
   password: z.string().min(8),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  phone: z.string().optional(),
+  phone: optionalPhoneSchema,
 });
 
 // Login
@@ -38,7 +39,7 @@ export const updateProfileDto = z.object({
   userType: z.enum(["student", "worker", "migrant", "other"]),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  phone: z.string().optional(),
+  phone: optionalPhoneSchema,
   city: z.string().optional(),
 });
 
