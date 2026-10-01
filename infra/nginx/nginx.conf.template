@@ -9,17 +9,19 @@ http {
   client_max_body_size 100M;
 
   server {
-    listen 80;
+    listen ${PORT};
 
-    # 127.0.0.11 = résolveur DNS intégré de Docker (toujours cette adresse en
-    # docker-compose). Sans ce `resolver` + les proxy_pass ci-dessous écrits
-    # avec une variable ($ambassade_api, pas le nom en dur), nginx ne résout
+    # RESOLVER_IP est détecté au démarrage par docker-entrypoint.sh (lu dans
+    # /etc/resolv.conf du conteneur — l'adresse du résolveur privé de Render
+    # n'est pas documentée/stable, donc pas question de la figer ici).
+    # Sans ce `resolver` + les proxy_pass ci-dessous écrits avec une variable
+    # ($ambassade_api, pas le nom en dur), nginx ne résout
     # ambassade-api/communaute-api/identity-api qu'UNE SEULE FOIS, au
-    # démarrage : un `docker compose restart` de l'un de ces services lui
-    # donne une nouvelle IP, et le gateway continue de taper sur l'ancienne
-    # jusqu'à son propre redémarrage (502 Bad Gateway) — rencontré plusieurs
-    # fois en développement avant ce correctif.
-    resolver 127.0.0.11 valid=10s;
+    # démarrage : si l'un de ces services redémarre (nouvelle IP interne),
+    # le gateway continue de taper sur l'ancienne jusqu'à son propre
+    # redémarrage (502 Bad Gateway) — le même problème a été rencontré
+    # plusieurs fois en développement avant ce correctif.
+    resolver ${RESOLVER_IP} valid=10s;
     set $identity_api identity-api:4001;
     set $ambassade_api ambassade-api:4002;
     set $communaute_api communaute-api:4003;
