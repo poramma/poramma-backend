@@ -55,6 +55,8 @@ export declare const listDocumentsQueryDto: z.ZodObject<{
     categoryId: z.ZodOptional<z.ZodString>;
     ownerUserId: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
+    dateFrom: z.ZodOptional<z.ZodString>;
+    dateTo: z.ZodOptional<z.ZodString>;
     page: z.ZodOptional<z.ZodNumber>;
     limit: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
@@ -65,6 +67,8 @@ export declare const listDocumentsQueryDto: z.ZodObject<{
     page?: number | undefined;
     ownerUserId?: string | undefined;
     categoryId?: string | undefined;
+    dateFrom?: string | undefined;
+    dateTo?: string | undefined;
 }, {
     search?: string | undefined;
     type?: "PHOTO" | "OTHER" | "ID_CARD" | "PASSPORT" | "STUDENT_CERT" | "CONSULAR_CARD" | "STUDENT_CARD" | "PROOF_ADDRESS" | "BIRTH_CERT" | "NATIONALITY_CERT" | "SCHOLARSHIP_PROOF" | undefined;
@@ -73,6 +77,8 @@ export declare const listDocumentsQueryDto: z.ZodObject<{
     page?: number | undefined;
     ownerUserId?: string | undefined;
     categoryId?: string | undefined;
+    dateFrom?: string | undefined;
+    dateTo?: string | undefined;
 }>;
 export declare const uploadDocumentDto: z.ZodObject<{
     type: z.ZodEnum<["ID_CARD", "PASSPORT", "STUDENT_CERT", "CONSULAR_CARD", "STUDENT_CARD", "PHOTO", "PROOF_ADDRESS", "BIRTH_CERT", "NATIONALITY_CERT", "SCHOLARSHIP_PROOF", "OTHER"]>;

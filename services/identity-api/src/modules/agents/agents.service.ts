@@ -51,7 +51,22 @@ async function toAgentShape(agentRow: typeof agents.$inferSelect) {
   };
 }
 
-export async function listAgents(filters: { search?: string; department?: string }) {
+/**
+ * search/status/role ne sont applicables qu'APRÈS toAgentShape (ils portent
+ * sur le user/profile/rôle joints, pas sur la table `agents` elle-même) —
+ * donc aussi la pagination, une fois ces trois filtres posés : c'est le
+ * même choix que listEtudiants (ambassade-core), qui charge puis découpe
+ * plutôt qu'un LIMIT/OFFSET SQL, pour rester correct avec des filtres
+ * résolus en mémoire.
+ */
+export async function listAgents(filters: {
+  search?: string;
+  department?: string;
+  status?: string;
+  role?: string;
+  page?: number;
+  limit?: number;
+}) {
   const conditions = [];
   if (filters.department) conditions.push(eq(agents.department, filters.department));
 
@@ -61,18 +76,31 @@ export async function listAgents(filters: { search?: string; department?: string
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(agents.createdAt);
 
-  const shaped = await Promise.all(rows.map(toAgentShape));
+  let shaped = await Promise.all(rows.map(toAgentShape));
 
-  // Search matches name/email/matricule — done in application code since it
-  // spans the joined user/profile, which toAgentShape already resolved.
   if (filters.search) {
     const q = filters.search.toLowerCase();
-    return shaped.filter((a) => {
+    shaped = shaped.filter((a) => {
       const fullName = `${a.user.profile?.firstName ?? ""} ${a.user.profile?.lastName ?? ""}`.toLowerCase();
       return fullName.includes(q) || a.user.email.toLowerCase().includes(q) || a.matricule.toLowerCase().includes(q);
     });
   }
-  return shaped;
+  if (filters.status) shaped = shaped.filter((a) => a.user.status === filters.status);
+  if (filters.role) shaped = shaped.filter((a) => a.user.activeRole?.name === filters.role);
+
+  const total = shaped.length;
+  // Sans page/limit explicites : liste complète, inchangé — plusieurs pages
+  // (affectation, messagerie, partage de document interne...) appellent
+  // fetchAgents() comme source d'un sélecteur et attendent TOUS les agents,
+  // pas une première page de 20. Seule la page de gestion (AgentsPage) passe
+  // page/limit pour activer la pagination.
+  if (filters.page === undefined && filters.limit === undefined) {
+    return { data: shaped, total };
+  }
+  const page = filters.page ?? 1;
+  const limit = filters.limit ?? 20;
+  const start = (page - 1) * limit;
+  return { data: shaped.slice(start, start + limit), total };
 }
 
 export async function getAgent(id: string) {

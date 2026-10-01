@@ -51,8 +51,8 @@ async function assertOwner(req, documentId) {
         throw new utils_1.ForbiddenError("Accès non autorisé à ce document");
 }
 async function listMyDocuments(req, res) {
-    const docs = await ambassade_core_1.documentsLogic.listDocuments(connection_1.db, { ownerUserId: req.userId, limit: 200 });
-    res.json((0, dto_1.ok)(docs.map(public_mappers_1.toPublicDocument)));
+    const { data } = await ambassade_core_1.documentsLogic.listDocuments(connection_1.db, { ownerUserId: req.userId, limit: 200 });
+    res.json((0, dto_1.ok)(data.map(public_mappers_1.toPublicDocument)));
 }
 async function getDocument(req, res) {
     await assertOwner(req, req.params.id);

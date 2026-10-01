@@ -49,11 +49,10 @@ async function listAgents(req, res) {
     const parsed = dto_1.listAgentsQueryDto.safeParse(req.query);
     if (!parsed.success)
         throw new utils_1.ValidationError("Filtres invalides", zodDetails(parsed.error));
-    const agents = await agentsService.listAgents({
-        search: parsed.data.search,
-        department: parsed.data.department,
-    });
-    res.json((0, dto_2.ok)(agents));
+    const { data, total } = await agentsService.listAgents(parsed.data);
+    const paginated = parsed.data.page !== undefined || parsed.data.limit !== undefined;
+    const meta = paginated ? (0, dto_2.paginationMeta)(parsed.data.page ?? 1, parsed.data.limit ?? 20, total) : undefined;
+    res.json((0, dto_2.ok)(data, meta));
 }
 async function getAgent(req, res) {
     res.json((0, dto_2.ok)(await agentsService.getAgent(req.params.id)));

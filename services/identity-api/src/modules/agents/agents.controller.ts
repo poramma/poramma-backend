@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import * as agentsService from "./agents.service";
 import { createAgentDto, updateAgentDto, listAgentsQueryDto } from "./dto";
-import { ok } from "@poramma/dto";
+import { ok, paginationMeta } from "@poramma/dto";
 import { ValidationError } from "@poramma/utils";
 
 function zodDetails(error: any): Record<string, string[]> {
@@ -12,11 +12,12 @@ export async function listAgents(req: Request, res: Response) {
   const parsed = listAgentsQueryDto.safeParse(req.query);
   if (!parsed.success) throw new ValidationError("Filtres invalides", zodDetails(parsed.error));
 
-  const agents = await agentsService.listAgents({
-    search: parsed.data.search,
-    department: parsed.data.department,
-  });
-  res.json(ok(agents));
+  const { data, total } = await agentsService.listAgents(parsed.data);
+  // meta seulement si la pagination a été explicitement demandée — sinon `data`
+  // contient déjà tout et un meta calculé sur une page fictive serait trompeur.
+  const paginated = parsed.data.page !== undefined || parsed.data.limit !== undefined;
+  const meta = paginated ? paginationMeta(parsed.data.page ?? 1, parsed.data.limit ?? 20, total) : undefined;
+  res.json(ok(data, meta));
 }
 
 export async function getAgent(req: Request, res: Response) {

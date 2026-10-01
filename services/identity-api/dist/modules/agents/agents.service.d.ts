@@ -14,22 +14,29 @@ interface CreateAgentInput {
 export declare function listAgents(filters: {
     search?: string;
     department?: string;
+    status?: string;
+    role?: string;
+    page?: number;
+    limit?: number;
 }): Promise<{
-    id: string;
-    userId: string;
-    user: import("../auth/auth.service").FullUser;
-    matricule: string;
-    roleTitle: string | null;
-    department: string;
-    officeNumber: string | null;
-    signatureUrl: string | null;
-    active: boolean | null;
-    hiredAt: Date;
-    createdAt: Date | null;
-    updatedAt: Date | null;
-    assignments: unknown[];
-    availabilities: unknown[];
-}[]>;
+    data: {
+        id: string;
+        userId: string;
+        user: import("../auth/auth.service").FullUser;
+        matricule: string;
+        roleTitle: string | null;
+        department: string;
+        officeNumber: string | null;
+        signatureUrl: string | null;
+        active: boolean | null;
+        hiredAt: Date;
+        createdAt: Date | null;
+        updatedAt: Date | null;
+        assignments: unknown[];
+        availabilities: unknown[];
+    }[];
+    total: number;
+}>;
 export declare function getAgent(id: string): Promise<{
     id: string;
     userId: string;

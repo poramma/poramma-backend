@@ -49,15 +49,26 @@ async function listAgents(filters) {
         .from(schema_identity_1.agents)
         .where(conditions.length ? (0, drizzle_orm_1.and)(...conditions) : undefined)
         .orderBy(schema_identity_1.agents.createdAt);
-    const shaped = await Promise.all(rows.map(toAgentShape));
+    let shaped = await Promise.all(rows.map(toAgentShape));
     if (filters.search) {
         const q = filters.search.toLowerCase();
-        return shaped.filter((a) => {
+        shaped = shaped.filter((a) => {
             const fullName = `${a.user.profile?.firstName ?? ""} ${a.user.profile?.lastName ?? ""}`.toLowerCase();
             return fullName.includes(q) || a.user.email.toLowerCase().includes(q) || a.matricule.toLowerCase().includes(q);
         });
     }
-    return shaped;
+    if (filters.status)
+        shaped = shaped.filter((a) => a.user.status === filters.status);
+    if (filters.role)
+        shaped = shaped.filter((a) => a.user.activeRole?.name === filters.role);
+    const total = shaped.length;
+    if (filters.page === undefined && filters.limit === undefined) {
+        return { data: shaped, total };
+    }
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
+    const start = (page - 1) * limit;
+    return { data: shaped.slice(start, start + limit), total };
 }
 async function getAgent(id) {
     const [row] = await connection_1.db.select().from(schema_identity_1.agents).where((0, drizzle_orm_1.eq)(schema_identity_1.agents.id, id));
