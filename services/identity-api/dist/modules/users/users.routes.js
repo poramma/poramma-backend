@@ -12,6 +12,8 @@ router.patch("/me/:id/personal-info", users_controller_1.requireSelf, users_cont
 router.patch("/me/:id/address", users_controller_1.requireSelf, users_controller_1.updateAddress);
 router.patch("/me/:id/student", users_controller_1.requireSelf, users_controller_1.updateStudentProfile);
 router.patch("/me/:id/worker", users_controller_1.requireSelf, users_controller_1.updateWorkerProfile);
+router.post("/me/:id/verify-email", users_controller_1.requireSelf, users_controller_1.verifyEmail);
+router.post("/me/:id/resend-verification", users_controller_1.requireSelf, users_controller_1.resendVerification);
 router.patch("/:id/status", (0, middleware_1.requirePermission)("user:update"), users_controller_1.updateUserStatus);
 exports.default = router;
 //# sourceMappingURL=users.routes.js.map

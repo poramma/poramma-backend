@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.apiErrorSchema = exports.paginationMetaSchema = exports.communityCampagnesDto = exports.communityRendezVousDto = exports.communityDemandesDto = exports.communityDocumentsDto = exports.communityServicesDto = void 0;
+exports.requiredPhoneSchema = exports.optionalPhoneSchema = exports.apiErrorSchema = exports.paginationMetaSchema = exports.communityCampagnesDto = exports.communityRendezVousDto = exports.communityDemandesDto = exports.communityDocumentsDto = exports.communityServicesDto = void 0;
 exports.apiResponseSchema = apiResponseSchema;
 exports.ok = ok;
 exports.fail = fail;
@@ -86,4 +86,29 @@ function paginationMeta(page, limit, total) {
         hasPrev: page > 1,
     };
 }
+const PHONE_SHAPE = /^\+?[\d\s()-]+$/;
+const MOROCCO_RE = /^(?:\+212|0)[5-7]\d{8}$/;
+const MALI_RE = /^(?:\+223)?[2-9]\d{7}$/;
+function compactPhone(value) {
+    const trimmed = value.trim();
+    const plus = trimmed.startsWith("+") ? "+" : "";
+    return plus + trimmed.replace(/[^\d]/g, "");
+}
+function isMoroccoOrMaliPhone(value) {
+    const compact = compactPhone(value);
+    return MOROCCO_RE.test(compact) || MALI_RE.test(compact);
+}
+const PHONE_FORMAT_MESSAGE = "Numéro invalide : format attendu Maroc (+212 6/7 puis 8 chiffres, ou 06/07…) ou Mali (+223 puis 8 chiffres)";
+exports.optionalPhoneSchema = zod_1.z
+    .string()
+    .trim()
+    .refine((v) => v === "" || PHONE_SHAPE.test(v), "Le numéro ne doit contenir que des chiffres (espaces, tirets et + acceptés)")
+    .refine((v) => v === "" || isMoroccoOrMaliPhone(v), PHONE_FORMAT_MESSAGE)
+    .optional();
+exports.requiredPhoneSchema = zod_1.z
+    .string()
+    .trim()
+    .min(1, "Le numéro de téléphone est requis")
+    .refine((v) => PHONE_SHAPE.test(v), "Le numéro ne doit contenir que des chiffres (espaces, tirets et + acceptés)")
+    .refine((v) => isMoroccoOrMaliPhone(v), PHONE_FORMAT_MESSAGE);
 //# sourceMappingURL=index.js.map

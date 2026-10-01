@@ -8,4 +8,6 @@ export declare function updateAddress(req: Request, res: Response): Promise<Resp
 export declare function updateStudentProfile(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
 export declare function updateWorkerProfile(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
 export declare function enrollStudent(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare const verifyEmail: (req: Request, res: Response, next: NextFunction) => void;
+export declare const resendVerification: (req: Request, res: Response, next: NextFunction) => void;
 //# sourceMappingURL=users.controller.d.ts.map

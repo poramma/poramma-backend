@@ -7,8 +7,14 @@ import {
   updateWorkerProfileDto,
   updateUserStatusDto,
   enrollStudentDto,
+  verifyEmailDto,
 } from "./dto";
 import { ok } from "@poramma/dto";
+import { ValidationError, asyncHandler } from "@poramma/utils";
+
+function zodDetails(error: any): Record<string, string[]> {
+  return error.flatten().fieldErrors as Record<string, string[]>;
+}
 
 /** :id doit être l'appelant lui-même — voir users.routes.ts. */
 export function requireSelf(req: Request, res: Response, next: NextFunction) {
@@ -109,6 +115,21 @@ export async function enrollStudent(req: Request, res: Response) {
     const student = await service.enrollStudent(parsed.data, enrolledBy);
     res.status(201).json(ok(student, undefined, "Étudiant enrôlé avec succès."));
   } catch (err: any) {
-    res.status(err.statusCode ?? 409).json({ error: err.message });
+    res.status(err.httpStatus ?? 409).json({ error: err.message });
   }
 }
+
+// POST /users/me/:id/verify-email — le titulaire confirme le code reçu à l'enrôlement.
+export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+  const parsed = verifyEmailDto.safeParse(req.body);
+  if (!parsed.success) throw new ValidationError("Données invalides", zodDetails(parsed.error));
+
+  await service.verifyEnrollmentEmail(req.params.id, parsed.data.otp);
+  res.json(ok(null, undefined, "Email confirmé."));
+});
+
+// POST /users/me/:id/resend-verification — un nouveau code remplace le précédent.
+export const resendVerification = asyncHandler(async (req: Request, res: Response) => {
+  await service.resendEnrollmentVerification(req.params.id);
+  res.json(ok(null, undefined, "Un nouveau code a été envoyé."));
+});

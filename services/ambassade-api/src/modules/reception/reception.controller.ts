@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { ok } from "@poramma/dto";
+import { ok, requiredPhoneSchema, optionalPhoneSchema } from "@poramma/dto";
 import { ValidationError } from "@poramma/utils";
 import * as svc from "./reception.service";
 
@@ -21,7 +21,7 @@ const walkInListQueryDto = z.object({
 
 const createWalkInDto = z.object({
   visitorName: z.string().trim().max(150).optional(),
-  visitorPhone: z.string().trim().max(30).nullable().optional(),
+  visitorPhone: optionalPhoneSchema.nullable(),
   userId: z.string().uuid().nullable().optional(),
   subServiceId: z.string().min(1).nullable().optional(),
   category: z.enum(svc.WALKIN_CATEGORIES),
@@ -44,7 +44,7 @@ const updateWalkInDto = z
 const visitorDto = z.object({
   lastName: z.string().trim().min(1, "Le nom est obligatoire").max(100),
   firstName: z.string().trim().min(1, "Le prénom est obligatoire").max(100),
-  phone: z.string().trim().min(6, "Le téléphone est obligatoire").max(30),
+  phone: requiredPhoneSchema,
   city: z.string().trim().min(1, "La ville est obligatoire").max(100),
 });
 

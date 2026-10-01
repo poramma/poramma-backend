@@ -143,7 +143,8 @@ export async function searchEtudiants(query: string) {
 
 export async function getEtudiantDocuments(userId: string) {
   await getRawOrThrow(userId); // 404 propre si l'utilisateur n'est pas (ou plus) étudiant
-  return listDocuments({ ownerUserId: userId, limit: 200 });
+  const { data } = await listDocuments({ ownerUserId: userId, limit: 200 });
+  return data;
 }
 
 export async function getEtudiantAudit(userId: string) {

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import multer from "multer";
 import * as svc from "./documents.service";
 import { createCategoryDto, updateCategoryDto, listDocumentsQueryDto, uploadDocumentDto, validateDocumentDto, auditQueryDto } from "./dto";
-import { ok } from "@poramma/dto";
+import { ok, paginationMeta } from "@poramma/dto";
 import { ValidationError, ForbiddenError } from "@poramma/utils";
 
 // 20MB covers both the 10MB (citizen documents) and 20MB (internal
@@ -96,7 +96,10 @@ export async function listDocuments(req: Request, res: Response) {
   const parsed = listDocumentsQueryDto.safeParse(req.query);
   if (!parsed.success) throw new ValidationError("Filtres invalides", zodDetails(parsed.error));
 
-  res.json(ok(await svc.listDocuments(parsed.data)));
+  const { data, total } = await svc.listDocuments(parsed.data);
+  const page = parsed.data.page ?? 1;
+  const limit = parsed.data.limit ?? 10;
+  res.json(ok(data, paginationMeta(page, limit, total)));
 }
 
 export async function getDocument(req: Request, res: Response) {

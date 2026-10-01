@@ -122,7 +122,10 @@ async function listDocuments(req, res) {
     const parsed = dto_1.listDocumentsQueryDto.safeParse(req.query);
     if (!parsed.success)
         throw new utils_1.ValidationError("Filtres invalides", zodDetails(parsed.error));
-    res.json((0, dto_2.ok)(await svc.listDocuments(parsed.data)));
+    const { data, total } = await svc.listDocuments(parsed.data);
+    const page = parsed.data.page ?? 1;
+    const limit = parsed.data.limit ?? 10;
+    res.json((0, dto_2.ok)(data, (0, dto_2.paginationMeta)(page, limit, total)));
 }
 async function getDocument(req, res) {
     await assertCanAccessDocument(req, req.params.id);

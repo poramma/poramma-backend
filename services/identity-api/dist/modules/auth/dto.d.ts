@@ -21,7 +21,7 @@ export declare const verifyOtpDto: z.ZodObject<{
     password: z.ZodString;
     firstName: z.ZodString;
     lastName: z.ZodString;
-    phone: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>;
 }, "strip", z.ZodTypeAny, {
     email: string;
     password: string;
@@ -61,7 +61,7 @@ export declare const updateProfileDto: z.ZodObject<{
     userType: z.ZodEnum<["student", "worker", "migrant", "other"]>;
     firstName: z.ZodOptional<z.ZodString>;
     lastName: z.ZodOptional<z.ZodString>;
-    phone: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>;
     city: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     userType: "student" | "worker" | "migrant" | "other";

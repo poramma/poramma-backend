@@ -32,6 +32,8 @@ exports.listDocumentsQueryDto = zod_1.z.object({
     categoryId: zod_1.z.string().optional(),
     ownerUserId: zod_1.z.string().uuid().optional(),
     search: zod_1.z.string().optional(),
+    dateFrom: zod_1.z.string().optional(),
+    dateTo: zod_1.z.string().optional(),
     page: zod_1.z.coerce.number().int().min(1).optional(),
     limit: zod_1.z.coerce.number().int().min(1).max(100).optional(),
 });

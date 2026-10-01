@@ -51,6 +51,7 @@ export interface FullUser {
   emailVerified: boolean;
   phoneVerified: boolean;
   status: string;
+  mustChangePassword: boolean;
   mfaEnabled: boolean;
   lastLoginAt: string | null;
   createdAt: Date | null;
@@ -191,6 +192,7 @@ export async function buildFullUser(userId: string): Promise<FullUser> {
     emailVerified: user.emailVerified!,
     phoneVerified: user.phoneVerified!,
     status: user.status!,
+    mustChangePassword: user.mustChangePassword!,
     mfaEnabled: false,
     lastLoginAt: lastSession?.at ? lastSession.at.toISOString() : null,
     createdAt: user.createdAt,

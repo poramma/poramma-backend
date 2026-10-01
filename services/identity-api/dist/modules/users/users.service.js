@@ -4,6 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.enrollStudent = enrollStudent;
+exports.verifyEnrollmentEmail = verifyEnrollmentEmail;
+exports.resendEnrollmentVerification = resendEnrollmentVerification;
 exports.getUserById = getUserById;
 exports.checkUser = checkUser;
 exports.getUserProfile = getUserProfile;
@@ -13,26 +15,60 @@ exports.updateAddress = updateAddress;
 exports.updateStudentProfile = updateStudentProfile;
 exports.updateWorkerProfile = updateWorkerProfile;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const crypto_1 = __importDefault(require("crypto"));
+const crypto_1 = require("crypto");
+const date_fns_1 = require("date-fns");
 const connection_1 = require("../../db/connection");
 const schema_identity_1 = require("../../db/schema.identity");
 const drizzle_orm_1 = require("drizzle-orm");
 const utils_1 = require("@poramma/utils");
 const mailer_1 = require("@poramma/mailer");
 const audit_1 = require("../../shared/audit");
-function generateTempPassword() {
-    return crypto_1.default.randomBytes(9).toString("base64url");
+function defaultStudentPassword() {
+    return `Poramma@${new Date().getFullYear()}`;
+}
+const ENROLL_VERIFY_PURPOSE = "enroll-verify";
+const ENROLL_VERIFY_TTL_MINUTES = 15;
+async function issueEnrollmentVerification(userId, email, firstName) {
+    const otp = (0, crypto_1.randomInt)(100000, 1000000).toString();
+    const codeHash = await bcryptjs_1.default.hash(otp, 10);
+    await connection_1.db.insert(schema_identity_1.otps).values({
+        userId,
+        codeHash,
+        channel: "email",
+        purpose: ENROLL_VERIFY_PURPOSE,
+        expiresAt: (0, date_fns_1.addMinutes)(new Date(), ENROLL_VERIFY_TTL_MINUTES),
+    });
+    await (0, mailer_1.sendMail)({
+        to: email,
+        subject: "Confirmez votre email — compte Poramma",
+        html: (0, mailer_1.renderEmail)({
+            title: `Bienvenue sur Poramma, ${firstName}`,
+            paragraphs: [
+                "Un compte étudiant a été créé pour vous lors de votre passage à l'ambassade.",
+                "Avant de pouvoir utiliser votre espace, confirmez que cette adresse email vous appartient bien en saisissant ce code :",
+            ],
+            rawHtml: `<p style="margin:8px 0 18px;font-size:34px;letter-spacing:8px;font-weight:700;color:#00572c;">${otp}</p>`,
+            footer: `Ce code est valable ${ENROLL_VERIFY_TTL_MINUTES} minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.`,
+        }),
+    });
 }
 async function enrollStudent(data, enrolledBy) {
     const [existingEmail] = await connection_1.db.select().from(schema_identity_1.users).where((0, drizzle_orm_1.eq)(schema_identity_1.users.email, data.email));
     if (existingEmail)
         throw new utils_1.ConflictError("Email déjà utilisé");
-    const tempPassword = data.password ?? generateTempPassword();
-    const passwordHash = await bcryptjs_1.default.hash(tempPassword, 10);
+    const temporaryPassword = data.password ?? defaultStudentPassword();
+    const passwordHash = await bcryptjs_1.default.hash(temporaryPassword, 10);
     const created = await connection_1.db.transaction(async (tx) => {
         const [user] = await tx
             .insert(schema_identity_1.users)
-            .values({ email: data.email, phone: data.phone ?? null, passwordHash, status: "VERIFIED", emailVerified: true })
+            .values({
+            email: data.email,
+            phone: data.phone ?? null,
+            passwordHash,
+            status: "UNVERIFIED",
+            emailVerified: false,
+            mustChangePassword: true,
+        })
             .returning();
         const [profile] = await tx
             .insert(schema_identity_1.userProfiles)
@@ -55,14 +91,17 @@ async function enrollStudent(data, enrolledBy) {
     await (0, mailer_1.sendMail)({
         to: data.email,
         subject: "Votre compte Poramma a été créé",
-        html: `
-      <h2>Bienvenue sur Poramma</h2>
-      <p>Un compte étudiant a été créé pour vous lors de votre passage à l'ambassade.</p>
-      <p>Identifiant : ${data.email}</p>
-      <p>Mot de passe temporaire : <strong>${tempPassword}</strong></p>
-      <p>Nous vous recommandons de le changer dès votre première connexion.</p>
-    `,
+        html: (0, mailer_1.renderEmail)({
+            title: `Bienvenue sur Poramma, ${data.firstName}`,
+            paragraphs: [
+                "Un compte étudiant a été créé pour vous lors de votre passage à l'ambassade.",
+                `Identifiant : ${data.email}`,
+            ],
+            rawHtml: `<p style="margin:0 0 14px;font-size:15px;color:#374151;">Mot de passe par défaut : <strong style="font-size:17px;letter-spacing:1px;">${temporaryPassword}</strong></p>`,
+            footer: "Ce mot de passe vous sera redemandé dès votre première connexion, avant tout accès à l'application. Un second email va suivre avec un code pour confirmer cette adresse.",
+        }),
     });
+    await issueEnrollmentVerification(created.user.id, data.email, data.firstName);
     await (0, audit_1.writeAudit)({
         action: "ENROLL",
         entityType: "USER",
@@ -70,7 +109,51 @@ async function enrollStudent(data, enrolledBy) {
         actor: { userId: enrolledBy, roleName: null },
         details: { email: data.email, onSite: true },
     });
-    return { id: created.user.id, email: created.user.email, firstName: created.profile.firstName, lastName: created.profile.lastName };
+    return {
+        id: created.user.id,
+        email: created.user.email,
+        firstName: created.profile.firstName,
+        lastName: created.profile.lastName,
+        temporaryPassword,
+    };
+}
+async function verifyEnrollmentEmail(userId, otp) {
+    const [record] = await connection_1.db
+        .select()
+        .from(schema_identity_1.otps)
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_identity_1.otps.userId, userId), (0, drizzle_orm_1.eq)(schema_identity_1.otps.purpose, ENROLL_VERIFY_PURPOSE)));
+    if (!record)
+        throw new utils_1.NotFoundError("Aucun code en attente pour ce compte");
+    if (record.consumedAt)
+        throw new utils_1.ConflictError("Ce code a déjà été utilisé");
+    if (record.expiresAt < new Date())
+        throw new utils_1.UnauthorizedError("Ce code a expiré, demandez-en un nouveau");
+    const valid = await bcryptjs_1.default.compare(otp, record.codeHash);
+    if (!valid)
+        throw new utils_1.UnauthorizedError("Code invalide");
+    await connection_1.db.transaction(async (tx) => {
+        await tx.update(schema_identity_1.otps).set({ consumedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_identity_1.otps.id, record.id));
+        await tx.update(schema_identity_1.users).set({ emailVerified: true, status: "VERIFIED", updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_identity_1.users.id, userId));
+    });
+    await (0, audit_1.writeAudit)({
+        action: "VERIFY_EMAIL",
+        entityType: "USER",
+        entityId: userId,
+        actor: { userId, roleName: null },
+    });
+}
+async function resendEnrollmentVerification(userId) {
+    const [user] = await connection_1.db.select().from(schema_identity_1.users).where((0, drizzle_orm_1.eq)(schema_identity_1.users.id, userId));
+    if (!user)
+        throw new utils_1.NotFoundError("Utilisateur introuvable");
+    if (user.emailVerified)
+        throw new utils_1.ConflictError("Cet email est déjà confirmé");
+    const [profile] = await connection_1.db.select().from(schema_identity_1.userProfiles).where((0, drizzle_orm_1.eq)(schema_identity_1.userProfiles.userId, userId));
+    await connection_1.db
+        .update(schema_identity_1.otps)
+        .set({ consumedAt: new Date() })
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_identity_1.otps.userId, userId), (0, drizzle_orm_1.eq)(schema_identity_1.otps.purpose, ENROLL_VERIFY_PURPOSE), (0, drizzle_orm_1.isNull)(schema_identity_1.otps.consumedAt)));
+    await issueEnrollmentVerification(userId, user.email, profile?.firstName ?? "");
 }
 async function getUserById(id) {
     const [user] = await connection_1.db.select().from(schema_identity_1.users).where((0, drizzle_orm_1.eq)(schema_identity_1.users.id, id));

@@ -48,8 +48,8 @@ async function assertOwner(req: Request, documentId: string): Promise<void> {
 }
 
 export async function listMyDocuments(req: Request, res: Response) {
-  const docs = await documentsLogic.listDocuments(db, { ownerUserId: (req as any).userId, limit: 200 });
-  res.json(ok(docs.map(toPublicDocument)));
+  const { data } = await documentsLogic.listDocuments(db, { ownerUserId: (req as any).userId, limit: 200 });
+  res.json(ok(data.map(toPublicDocument)));
 }
 
 export async function getDocument(req: Request, res: Response) {

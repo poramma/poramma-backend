@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalPhoneSchema } from "@poramma/dto";
 
 export const createUserDto = z.object({
   email: z.string().email(),
@@ -10,7 +11,7 @@ export const createUserDto = z.object({
 export const updatePersonalInfoDto = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  phone: z.string().optional(),
+  phone: optionalPhoneSchema,
   // Type de profil choisi à l'enregistrement auprès de l'ambassade — décide des
   // informations et pièces demandées (voir communaute-api /profile/registration).
   userType: z.enum(["student", "worker", "migrant", "other"]).optional(),
@@ -50,10 +51,14 @@ export const updateUserStatusDto = z.object({
     status: z.enum(["UNVERIFIED", "PENDING", "VERIFIED", "SUSPENDED"]),
   });
 
+export const verifyEmailDto = z.object({
+  otp: z.string().length(6),
+});
+
 export const enrollStudentDto = z.object({
   email: z.string().email(),
   password: z.string().min(8).optional(),
-  phone: z.string().optional(),
+  phone: optionalPhoneSchema,
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   university: z.string().optional(),

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetPasswordDto = exports.forgotPasswordDto = exports.switchRoleDto = exports.updateProfileDto = exports.refreshDto = exports.loginDto = exports.verifyOtpDto = exports.registerDto = void 0;
 const zod_1 = require("zod");
+const dto_1 = require("@poramma/dto");
 exports.registerDto = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(8),
@@ -14,7 +15,7 @@ exports.verifyOtpDto = zod_1.z.object({
     password: zod_1.z.string().min(8),
     firstName: zod_1.z.string().min(1),
     lastName: zod_1.z.string().min(1),
-    phone: zod_1.z.string().optional(),
+    phone: dto_1.optionalPhoneSchema,
 });
 exports.loginDto = zod_1.z.object({
     email: zod_1.z.string().email(),
@@ -28,7 +29,7 @@ exports.updateProfileDto = zod_1.z.object({
     userType: zod_1.z.enum(["student", "worker", "migrant", "other"]),
     firstName: zod_1.z.string().optional(),
     lastName: zod_1.z.string().optional(),
-    phone: zod_1.z.string().optional(),
+    phone: dto_1.optionalPhoneSchema,
     city: zod_1.z.string().optional(),
 });
 exports.switchRoleDto = zod_1.z.object({

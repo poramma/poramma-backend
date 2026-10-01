@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.resendVerification = exports.verifyEmail = void 0;
 exports.requireSelf = requireSelf;
 exports.getUser = getUser;
 exports.getUserProfile = getUserProfile;
@@ -45,6 +46,10 @@ exports.enrollStudent = enrollStudent;
 const service = __importStar(require("./users.service"));
 const dto_1 = require("./dto");
 const dto_2 = require("@poramma/dto");
+const utils_1 = require("@poramma/utils");
+function zodDetails(error) {
+    return error.flatten().fieldErrors;
+}
 function requireSelf(req, res, next) {
     if (req.params.id !== req.userId) {
         return res.status(403).json({ error: "Accès non autorisé à ce profil" });
@@ -141,7 +146,18 @@ async function enrollStudent(req, res) {
         res.status(201).json((0, dto_2.ok)(student, undefined, "Étudiant enrôlé avec succès."));
     }
     catch (err) {
-        res.status(err.statusCode ?? 409).json({ error: err.message });
+        res.status(err.httpStatus ?? 409).json({ error: err.message });
     }
 }
+exports.verifyEmail = (0, utils_1.asyncHandler)(async (req, res) => {
+    const parsed = dto_1.verifyEmailDto.safeParse(req.body);
+    if (!parsed.success)
+        throw new utils_1.ValidationError("Données invalides", zodDetails(parsed.error));
+    await service.verifyEnrollmentEmail(req.params.id, parsed.data.otp);
+    res.json((0, dto_2.ok)(null, undefined, "Email confirmé."));
+});
+exports.resendVerification = (0, utils_1.asyncHandler)(async (req, res) => {
+    await service.resendEnrollmentVerification(req.params.id);
+    res.json((0, dto_2.ok)(null, undefined, "Un nouveau code a été envoyé."));
+});
 //# sourceMappingURL=users.controller.js.map

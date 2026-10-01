@@ -8,6 +8,8 @@ import {
   updateWorkerProfile,
   updateUserStatus,
   enrollStudent,
+  verifyEmail,
+  resendVerification,
   requireSelf,
 } from "./users.controller";
 import { requireAuth, requirePermission } from "../../shared/middleware";
@@ -33,6 +35,11 @@ router.patch("/me/:id/personal-info", requireSelf, updatePersonalInfo);
 router.patch("/me/:id/address", requireSelf, updateAddress);
 router.patch("/me/:id/student", requireSelf, updateStudentProfile);
 router.patch("/me/:id/worker", requireSelf, updateWorkerProfile);
+
+// Vérification de l'email envoyé à l'enrôlement — self-service, aucune
+// permission agent : c'est le titulaire du compte qui confirme sa boîte mail.
+router.post("/me/:id/verify-email", requireSelf, verifyEmail);
+router.post("/me/:id/resend-verification", requireSelf, resendVerification);
 
 router.patch("/:id/status", requirePermission("user:update"), updateUserStatus);
 

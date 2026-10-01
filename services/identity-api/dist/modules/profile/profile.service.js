@@ -116,7 +116,7 @@ async function updateMyPassword(userId, currentPassword, newPassword) {
     if (!matches)
         throw new utils_1.UnauthorizedError("Mot de passe actuel incorrect");
     const newHash = await bcryptjs_1.default.hash(newPassword, 10);
-    await connection_1.db.update(schema_identity_1.users).set({ passwordHash: newHash, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_identity_1.users.id, userId));
+    await connection_1.db.update(schema_identity_1.users).set({ passwordHash: newHash, mustChangePassword: false, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_identity_1.users.id, userId));
 }
 async function uploadSignature(userId, buffer, originalName, mimeType) {
     const agent = await getAgentRow(userId);

@@ -32,87 +32,90 @@ export declare function listDocuments(db: Db, query: {
     page?: number;
     limit?: number;
 }): Promise<{
-    previousVersionId: null;
-    file: {
-        encryptionKeyId: null;
-        id: string;
-        path: string;
-        mimeType: string;
-        originalName: string;
-        checksum: string;
-        size: number;
-        uploadedBy: string;
-        uploadedAt: Date | null;
-        expiresAt: Date | null;
-    } | null;
-    owner: {
-        profile: ({
+    data: {
+        previousVersionId: null;
+        file: {
+            encryptionKeyId: null;
             id: string;
-            userId: string;
-            inue: string | null;
-            userType: string | null;
-            firstName: string | null;
-            lastName: string | null;
-            nationality: string | null;
-            address: string | null;
-            city: string | null;
-            country: string | null;
-        } & {
-            inue: string | null;
-        }) | null;
-        id: string;
-        email: string;
-        phone: string | null;
-        status: string | null;
-        createdAt: Date | null;
-    } | null;
-    category: {
-        id: string;
-        name: string;
-        code: string;
-        description: string | null;
-        allowedTypes: unknown;
-        requiresValidation: boolean | null;
-        maxVersions: number | null;
-        retentionDays: number | null;
-        createdAt: Date | null;
-    } | null;
-    reviewedByUser: {
-        profile: ({
+            path: string;
+            mimeType: string;
+            originalName: string;
+            checksum: string;
+            size: number;
+            uploadedBy: string;
+            uploadedAt: Date | null;
+            expiresAt: Date | null;
+        } | null;
+        owner: {
+            profile: ({
+                id: string;
+                userId: string;
+                inue: string | null;
+                userType: string | null;
+                firstName: string | null;
+                lastName: string | null;
+                nationality: string | null;
+                address: string | null;
+                city: string | null;
+                country: string | null;
+            } & {
+                inue: string | null;
+            }) | null;
             id: string;
-            userId: string;
-            inue: string | null;
-            userType: string | null;
-            firstName: string | null;
-            lastName: string | null;
-            nationality: string | null;
-            address: string | null;
-            city: string | null;
-            country: string | null;
-        } & {
-            inue: string | null;
-        }) | null;
+            email: string;
+            phone: string | null;
+            status: string | null;
+            createdAt: Date | null;
+        } | null;
+        category: {
+            id: string;
+            name: string;
+            code: string;
+            description: string | null;
+            allowedTypes: unknown;
+            requiresValidation: boolean | null;
+            maxVersions: number | null;
+            retentionDays: number | null;
+            createdAt: Date | null;
+        } | null;
+        reviewedByUser: {
+            profile: ({
+                id: string;
+                userId: string;
+                inue: string | null;
+                userType: string | null;
+                firstName: string | null;
+                lastName: string | null;
+                nationality: string | null;
+                address: string | null;
+                city: string | null;
+                country: string | null;
+            } & {
+                inue: string | null;
+            }) | null;
+            id: string;
+            email: string;
+            phone: string | null;
+            status: string | null;
+            createdAt: Date | null;
+        } | null;
         id: string;
-        email: string;
-        phone: string | null;
-        status: string | null;
         createdAt: Date | null;
-    } | null;
-    id: string;
-    createdAt: Date | null;
-    type: string;
-    status: string;
-    reviewNote: string | null;
-    reviewedBy: string | null;
-    reviewedAt: Date | null;
-    updatedAt: Date | null;
-    ownerUserId: string;
-    categoryId: string | null;
-    fileId: string;
-    expiryDate: string | null;
-    version: number;
-    notes: string | null;
-}[]>;
+        type: string;
+        status: string;
+        reviewNote: string | null;
+        reviewedBy: string | null;
+        reviewedAt: Date | null;
+        updatedAt: Date | null;
+        ownerUserId: string;
+        categoryId: string | null;
+        fileId: string;
+        expiryDate: string | null;
+        version: number;
+        notes: string | null;
+    }[];
+    total: number;
+}>;
 export declare function getDocument(db: Db, id: string): Promise<{
     previousVersionId: null;
     file: {

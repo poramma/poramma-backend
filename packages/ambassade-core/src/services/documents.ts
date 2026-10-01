@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { NotFoundError, ValidationError } from "@poramma/utils";
 import { uploadObject, getObject } from "@poramma/storage";
 import type { Db } from "../db-type";
@@ -71,6 +71,14 @@ async function enrichDocument(db: Db, row: typeof documents.$inferSelect) {
   return { ...row, previousVersionId: null, file: file ? { ...file, encryptionKeyId: null } : null, owner, category, reviewedByUser };
 }
 
+/**
+ * `search` filtre sur des champs résolus après jointure (nom/prénom/INUE du
+ * propriétaire, nom du fichier) — impossible à traduire en `WHERE` SQL sans
+ * dupliquer ces jointures ici. Avec une recherche active, la page demandée
+ * s'applique donc APRÈS filtrage plutôt qu'en LIMIT/OFFSET SQL : on charge un
+ * lot large (10x la page demandée, jusqu'à 1000 lignes) pour rester correct
+ * sans non plus rapatrier toute la table à chaque frappe.
+ */
 export async function listDocuments(
   db: Db,
   query: {
@@ -79,6 +87,8 @@ export async function listDocuments(
     categoryId?: string;
     ownerUserId?: string;
     search?: string;
+    dateFrom?: string;
+    dateTo?: string;
     page?: number;
     limit?: number;
   }
@@ -88,31 +98,49 @@ export async function listDocuments(
   if (query.type) conditions.push(eq(documents.type, query.type));
   if (query.categoryId) conditions.push(eq(documents.categoryId, query.categoryId));
   if (query.ownerUserId) conditions.push(eq(documents.ownerUserId, query.ownerUserId));
+  // dateFrom/dateTo en filtre serveur (et plus seulement client) : sinon la
+  // pagination (total/limit/offset) et ce filtre se contredisent — le total
+  // annoncé ne correspondrait plus à ce qui reste après un filtrage local.
+  if (query.dateFrom) conditions.push(sql`${documents.createdAt} >= ${query.dateFrom}::date`);
+  if (query.dateTo) conditions.push(sql`${documents.createdAt} < (${query.dateTo}::date + interval '1 day')`);
 
   const page = query.page ?? 1;
-  const limit = query.limit ?? 50;
-
-  const rows = await db
-    .select()
-    .from(documents)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(documents.createdAt))
-    .limit(limit)
-    .offset((page - 1) * limit);
-
-  const enriched = await Promise.all(rows.map((r) => enrichDocument(db, r)));
+  const limit = query.limit ?? 10;
+  const where = conditions.length ? and(...conditions) : undefined;
 
   if (query.search) {
     const s = query.search.toLowerCase();
-    return enriched.filter(
+    const rows = await db
+      .select()
+      .from(documents)
+      .where(where)
+      .orderBy(desc(documents.createdAt))
+      .limit(1000);
+    const enriched = await Promise.all(rows.map((r) => enrichDocument(db, r)));
+    const matched = enriched.filter(
       (d) =>
         d.owner?.profile?.firstName?.toLowerCase().includes(s) ||
         d.owner?.profile?.lastName?.toLowerCase().includes(s) ||
         d.owner?.profile?.inue?.toLowerCase().includes(s) ||
         d.file?.originalName?.toLowerCase().includes(s)
     );
+    const start = (page - 1) * limit;
+    return { data: matched.slice(start, start + limit), total: matched.length };
   }
-  return enriched;
+
+  const [rows, [{ count }]] = await Promise.all([
+    db
+      .select()
+      .from(documents)
+      .where(where)
+      .orderBy(desc(documents.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({ count: sql<number>`count(*)::int` }).from(documents).where(where),
+  ]);
+
+  const enriched = await Promise.all(rows.map((r) => enrichDocument(db, r)));
+  return { data: enriched, total: count };
 }
 
 export async function getDocument(db: Db, id: string) {

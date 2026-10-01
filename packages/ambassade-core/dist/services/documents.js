@@ -72,23 +72,36 @@ async function listDocuments(db, query) {
     if (query.ownerUserId)
         conditions.push((0, drizzle_orm_1.eq)(documents_1.documents.ownerUserId, query.ownerUserId));
     const page = query.page ?? 1;
-    const limit = query.limit ?? 50;
-    const rows = await db
-        .select()
-        .from(documents_1.documents)
-        .where(conditions.length ? (0, drizzle_orm_1.and)(...conditions) : undefined)
-        .orderBy((0, drizzle_orm_1.desc)(documents_1.documents.createdAt))
-        .limit(limit)
-        .offset((page - 1) * limit);
-    const enriched = await Promise.all(rows.map((r) => enrichDocument(db, r)));
+    const limit = query.limit ?? 10;
+    const where = conditions.length ? (0, drizzle_orm_1.and)(...conditions) : undefined;
     if (query.search) {
         const s = query.search.toLowerCase();
-        return enriched.filter((d) => d.owner?.profile?.firstName?.toLowerCase().includes(s) ||
+        const rows = await db
+            .select()
+            .from(documents_1.documents)
+            .where(where)
+            .orderBy((0, drizzle_orm_1.desc)(documents_1.documents.createdAt))
+            .limit(1000);
+        const enriched = await Promise.all(rows.map((r) => enrichDocument(db, r)));
+        const matched = enriched.filter((d) => d.owner?.profile?.firstName?.toLowerCase().includes(s) ||
             d.owner?.profile?.lastName?.toLowerCase().includes(s) ||
             d.owner?.profile?.inue?.toLowerCase().includes(s) ||
             d.file?.originalName?.toLowerCase().includes(s));
+        const start = (page - 1) * limit;
+        return { data: matched.slice(start, start + limit), total: matched.length };
     }
-    return enriched;
+    const [rows, [{ count }]] = await Promise.all([
+        db
+            .select()
+            .from(documents_1.documents)
+            .where(where)
+            .orderBy((0, drizzle_orm_1.desc)(documents_1.documents.createdAt))
+            .limit(limit)
+            .offset((page - 1) * limit),
+        db.select({ count: (0, drizzle_orm_1.sql) `count(*)::int` }).from(documents_1.documents).where(where),
+    ]);
+    const enriched = await Promise.all(rows.map((r) => enrichDocument(db, r)));
+    return { data: enriched, total: count };
 }
 async function getDocument(db, id) {
     const [row] = await db.select().from(documents_1.documents).where((0, drizzle_orm_1.eq)(documents_1.documents.id, id));

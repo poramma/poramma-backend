@@ -113,7 +113,8 @@ async function searchEtudiants(query) {
 }
 async function getEtudiantDocuments(userId) {
     await getRawOrThrow(userId);
-    return (0, documents_service_1.listDocuments)({ ownerUserId: userId, limit: 200 });
+    const { data } = await (0, documents_service_1.listDocuments)({ ownerUserId: userId, limit: 200 });
+    return data;
 }
 async function getEtudiantAudit(userId) {
     const tracking = await ensureEtudiantRecord(userId);

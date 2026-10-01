@@ -114,7 +114,9 @@ export async function updateMyPassword(userId: string, currentPassword: string, 
   if (!matches) throw new UnauthorizedError("Mot de passe actuel incorrect");
 
   const newHash = await bcrypt.hash(newPassword, 10);
-  await db.update(users).set({ passwordHash: newHash, updatedAt: new Date() }).where(eq(users.id, userId));
+  // Lève aussi mustChangePassword : un compte enrôlé sur place (mot de passe
+  // par défaut) redevient un compte normal dès que le titulaire en choisit un.
+  await db.update(users).set({ passwordHash: newHash, mustChangePassword: false, updatedAt: new Date() }).where(eq(users.id, userId));
 }
 
 /** POST /profile/signature — remplace le fichier existant s'il y en avait un (best-effort cleanup). */

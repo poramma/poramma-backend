@@ -34,6 +34,8 @@ export const listDocumentsQueryDto = z.object({
   categoryId: z.string().optional(),
   ownerUserId: z.string().uuid().optional(),
   search: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
