@@ -15,6 +15,13 @@ RESOLVER_IP=$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf)
 : "${IDENTITY_UPSTREAM:=identity-api:4001}"
 : "${AMBASSADE_UPSTREAM:=ambassade-api:4002}"
 : "${COMMUNAUTE_UPSTREAM:=communaute-api:4003}"
+# Une valeur sans "://" est une adresse du réseau privé (host:port, http) ;
+# avec "://", une URL complète (ex. https://mon-api.onrender.com, utile quand
+# les services sont sur un plan Free, sans réseau privé).
+with_scheme() { case "$1" in *://*) printf '%s' "$1" ;; *) printf 'http://%s' "$1" ;; esac; }
+IDENTITY_UPSTREAM=$(with_scheme "$IDENTITY_UPSTREAM")
+AMBASSADE_UPSTREAM=$(with_scheme "$AMBASSADE_UPSTREAM")
+COMMUNAUTE_UPSTREAM=$(with_scheme "$COMMUNAUTE_UPSTREAM")
 export PORT RESOLVER_IP IDENTITY_UPSTREAM AMBASSADE_UPSTREAM COMMUNAUTE_UPSTREAM
 
 envsubst '$PORT $RESOLVER_IP $IDENTITY_UPSTREAM $AMBASSADE_UPSTREAM $COMMUNAUTE_UPSTREAM' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf

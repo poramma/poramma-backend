@@ -21,7 +21,7 @@ http {
     # le gateway continue de taper sur l'ancienne jusqu'à son propre
     # redémarrage (502 Bad Gateway) — le même problème a été rencontré
     # plusieurs fois en développement avant ce correctif.
-    resolver ${RESOLVER_IP} valid=10s;
+    resolver ${RESOLVER_IP} valid=10s ipv6=off;
     set $identity_api ${IDENTITY_UPSTREAM};
     set $ambassade_api ${AMBASSADE_UPSTREAM};
     set $communaute_api ${COMMUNAUTE_UPSTREAM};
@@ -31,7 +31,12 @@ http {
     # show the gateway container's internal address instead of the actual
     # caller. Each service must call app.set("trust proxy", 1) for Express
     # to read this instead of the raw socket peer address (see app.ts).
-    proxy_set_header Host $host;
+    # $proxy_host = hôte de l'upstream : nécessaire quand l'upstream est une URL
+    # publique HTTPS (Render route par en-tête Host/SNI). Le Host d'origine est
+    # conservé dans X-Forwarded-Host.
+    proxy_set_header Host $proxy_host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_ssl_server_name on;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -42,44 +47,48 @@ http {
     # apply client-side (see frontend-embassy's lib/api.ts, now a single
     # constant base URL instead of this routing logic). Keep both lists in
     # sync if a new ambassade-api module is mounted at a new root path.
-    location /services { proxy_pass http://$ambassade_api; }
-    location /sub-services { proxy_pass http://$ambassade_api; }
-    location /schedules { proxy_pass http://$ambassade_api; }
-    location /exceptions { proxy_pass http://$ambassade_api; }
-    location /requirements { proxy_pass http://$ambassade_api; }
-    location /document-categories { proxy_pass http://$ambassade_api; }
-    location /documents { proxy_pass http://$ambassade_api; }
-    location /internal-documents { proxy_pass http://$ambassade_api; }
-    location /demandes { proxy_pass http://$ambassade_api; }
-    location /agenda-slots { proxy_pass http://$ambassade_api; }
-    location /rendez-vous { proxy_pass http://$ambassade_api; }
-    location /communication { proxy_pass http://$ambassade_api; }
-    location /notifications { proxy_pass http://$ambassade_api; }
-    location /audit { proxy_pass http://$ambassade_api; }
-    location /agent-requests { proxy_pass http://$ambassade_api; }
-    location /support-tickets { proxy_pass http://$ambassade_api; }
-    location /culture { proxy_pass http://$ambassade_api; }
-    location /reception { proxy_pass http://$ambassade_api; }
-    location /threads { proxy_pass http://$ambassade_api; }
-    location /assignments { proxy_pass http://$ambassade_api; }
-    location /etudiants { proxy_pass http://$ambassade_api; }
+    location /services { proxy_pass $ambassade_api; }
+    location /sub-services { proxy_pass $ambassade_api; }
+    location /schedules { proxy_pass $ambassade_api; }
+    location /exceptions { proxy_pass $ambassade_api; }
+    location /requirements { proxy_pass $ambassade_api; }
+    location /document-categories { proxy_pass $ambassade_api; }
+    location /documents { proxy_pass $ambassade_api; }
+    location /internal-documents { proxy_pass $ambassade_api; }
+    location /demandes { proxy_pass $ambassade_api; }
+    location /agenda-slots { proxy_pass $ambassade_api; }
+    location /rendez-vous { proxy_pass $ambassade_api; }
+    location /communication { proxy_pass $ambassade_api; }
+    location /notifications { proxy_pass $ambassade_api; }
+    location /audit { proxy_pass $ambassade_api; }
+    location /agent-requests { proxy_pass $ambassade_api; }
+    location /support-tickets { proxy_pass $ambassade_api; }
+    location /culture { proxy_pass $ambassade_api; }
+    location /reception { proxy_pass $ambassade_api; }
+    location /threads { proxy_pass $ambassade_api; }
+    location /assignments { proxy_pass $ambassade_api; }
+    location /etudiants { proxy_pass $ambassade_api; }
 
     # /agents itself (list/create/update/delete accounts) stays on
     # identity-api (falls through to the default location below); only its
     # schedule sub-resources belong to ambassade-api.
     location ~ ^/agents/[^/]+/(availabilities|exceptions|assignments) {
-      proxy_pass http://$ambassade_api;
+      proxy_pass $ambassade_api;
     }
 
     # communaute-api — student/community-facing endpoints, once built.
+    # Avec une variable dans proxy_pass, nginx ne retire PAS le préfixe de la
+    # location (une URI "/" remplacerait toute l'URL demandée) : on le réécrit
+    # explicitement avant de proxifier.
     location /api/communaute/ {
-      proxy_pass http://$communaute_api/;
+      rewrite ^/api/communaute/(.*)$ /$1 break;
+      proxy_pass $communaute_api;
     }
 
     # Everything else defaults to identity-api (auth, users, agents, roles,
     # profile, ...).
     location / {
-      proxy_pass http://$identity_api;
+      proxy_pass $identity_api;
     }
   }
 }
