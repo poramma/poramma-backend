@@ -29,6 +29,8 @@ export declare function listDocuments(db: Db, query: {
     categoryId?: string;
     ownerUserId?: string;
     search?: string;
+    dateFrom?: string;
+    dateTo?: string;
     page?: number;
     limit?: number;
 }): Promise<{

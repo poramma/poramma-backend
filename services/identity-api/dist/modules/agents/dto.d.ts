@@ -2,7 +2,7 @@ import { z } from "zod";
 export declare const createAgentDto: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodOptional<z.ZodString>;
-    phone: z.ZodNullable<z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>>;
+    phone: z.ZodNullable<z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>>>;
     firstName: z.ZodString;
     lastName: z.ZodString;
     matricule: z.ZodString;
@@ -38,7 +38,7 @@ export declare const createAgentDto: z.ZodObject<{
 }>;
 export declare const updateAgentDto: z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
-    phone: z.ZodNullable<z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>, string, string>>>;
+    phone: z.ZodNullable<z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>>>;
     firstName: z.ZodOptional<z.ZodString>;
     lastName: z.ZodOptional<z.ZodString>;
     matricule: z.ZodOptional<z.ZodString>;
