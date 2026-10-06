@@ -25,7 +25,7 @@ const support_routes_1 = __importDefault(require("./modules/support/support.rout
 const culture_routes_1 = __importDefault(require("./modules/culture/culture.routes"));
 const reception_routes_1 = __importDefault(require("./modules/reception/reception.routes"));
 const app = (0, express_1.default)();
-app.set("trust proxy", 1);
+app.set("trust proxy", process.env.TRUST_PROXY ? process.env.TRUST_PROXY.split(",").map((s) => s.trim()) : 1);
 const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174").split(",").map((o) => o.trim());
 app.use((0, cors_1.default)({
     origin: corsOrigins,

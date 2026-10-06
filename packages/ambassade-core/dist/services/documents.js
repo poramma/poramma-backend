@@ -71,6 +71,10 @@ async function listDocuments(db, query) {
         conditions.push((0, drizzle_orm_1.eq)(documents_1.documents.categoryId, query.categoryId));
     if (query.ownerUserId)
         conditions.push((0, drizzle_orm_1.eq)(documents_1.documents.ownerUserId, query.ownerUserId));
+    if (query.dateFrom)
+        conditions.push((0, drizzle_orm_1.sql) `${documents_1.documents.createdAt} >= ${query.dateFrom}::date`);
+    if (query.dateTo)
+        conditions.push((0, drizzle_orm_1.sql) `${documents_1.documents.createdAt} < (${query.dateTo}::date + interval '1 day')`);
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const where = conditions.length ? (0, drizzle_orm_1.and)(...conditions) : undefined;
