@@ -22,9 +22,9 @@ http {
     # redémarrage (502 Bad Gateway) — le même problème a été rencontré
     # plusieurs fois en développement avant ce correctif.
     resolver ${RESOLVER_IP} valid=10s;
-    set $identity_api identity-api:4001;
-    set $ambassade_api ambassade-api:4002;
-    set $communaute_api communaute-api:4003;
+    set $identity_api ${IDENTITY_UPSTREAM};
+    set $ambassade_api ${AMBASSADE_UPSTREAM};
+    set $communaute_api ${COMMUNAUTE_UPSTREAM};
 
     # Real client IP forwarded through — every service's audit log
     # (LOGIN, LOGIN_ATTEMPT, ...) captures req.ip, which without this would
