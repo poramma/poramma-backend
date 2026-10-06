@@ -85,18 +85,6 @@ http {
       proxy_pass $communaute_api;
     }
 
-    # DIAGNOSTIC TEMPORAIRE (à retirer) : en-têtes d'IP reçus de l'edge Render.
-    location = /__edge {
-      default_type text/plain;
-      return 200 "remote_addr=$remote_addr
-xff=$http_x_forwarded_for
-true_client_ip=$http_true_client_ip
-cf_connecting_ip=$http_cf_connecting_ip
-x_real_ip=$http_x_real_ip
-forwarded=$http_forwarded
-";
-    }
-
     # Everything else defaults to identity-api (auth, users, agents, roles,
     # profile, ...).
     location / {

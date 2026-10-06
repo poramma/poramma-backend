@@ -24,7 +24,12 @@ const app: Express = express();
 
 // Derrière le gateway nginx (Phase 9) — voir le même commentaire dans
 // identity-api/src/app.ts.
-app.set("trust proxy", 1);
+// TRUST_PROXY (IP/CIDR séparés par des virgules) remplace le nombre de sauts
+// fixe quand la chaîne devant l'app est variable : sur Render, edge Cloudflare
+// + répartiteur interne + éventuellement le gateway. Express prend alors la
+// première IP NON listée en partant de la droite = le vrai client, quel que
+// soit le nombre de sauts. Sans la variable : 1 saut (docker-compose local).
+app.set("trust proxy", process.env.TRUST_PROXY ? process.env.TRUST_PROXY.split(",").map((s) => s.trim()) : 1);
 
 // Middlewares globaux — plusieurs origines possibles en dev (frontend-
 // embassy:5173, frontend-community:5174), voir identity-api/src/app.ts.
