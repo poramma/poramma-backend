@@ -40,6 +40,10 @@ exports.register = register;
 exports.sendOtp = sendOtp;
 exports.verifyOtp = verifyOtp;
 exports.login = login;
+exports.publicConfig = publicConfig;
+exports.googleSignIn = googleSignIn;
+exports.googleLink = googleLink;
+exports.googleUnlink = googleUnlink;
 exports.refresh = refresh;
 exports.logout = logout;
 exports.me = me;
@@ -51,6 +55,8 @@ exports.forgotPassword = forgotPassword;
 exports.resetPassword = resetPassword;
 const dto_1 = require("./dto");
 const authService = __importStar(require("./auth.service"));
+const googleAuth = __importStar(require("./google-auth.service"));
+const google_1 = require("./google");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const crypto_1 = require("crypto");
 const mailer_1 = require("@poramma/mailer");
@@ -123,6 +129,36 @@ async function login(req, res) {
     const clientApp = req.headers["x-client-app"] === "community" ? "community" : "embassy";
     const tokens = await authService.login(parsed.data.email, parsed.data.password, req.ip, typeof ua === "string" ? ua : null, parsed.data.rememberMe ?? false, clientApp);
     res.json((0, dto_2.ok)(tokens));
+}
+async function publicConfig(_req, res) {
+    const [clientId] = (0, google_1.googleClientIds)();
+    res.json((0, dto_2.ok)({ google: clientId ? { clientId } : null }));
+}
+const GOOGLE_RATE_LIMIT = 60;
+const GOOGLE_RATE_WINDOW_SECONDS = 15 * 60;
+function requestCtx(req) {
+    const ua = req.headers["user-agent"];
+    return { ip: req.ip, ua: typeof ua === "string" ? ua : null };
+}
+async function googleSignIn(req, res) {
+    const parsed = dto_1.googleCredentialDto.safeParse(req.body);
+    if (!parsed.success)
+        throw new utils_1.ValidationError("Données invalides", zodDetails(parsed.error));
+    await enforceRateLimit(`google:${req.ip}`, GOOGLE_RATE_LIMIT, GOOGLE_RATE_WINDOW_SECONDS);
+    const result = await googleAuth.signInWithGoogle(parsed.data.credential, { ...requestCtx(req), rememberMe: parsed.data.rememberMe ?? false });
+    res.status(result.isNewUser ? 201 : 200).json((0, dto_2.ok)(result, undefined, result.isNewUser ? "Compte créé avec Google." : undefined));
+}
+async function googleLink(req, res) {
+    const parsed = dto_1.googleCredentialDto.safeParse(req.body);
+    if (!parsed.success)
+        throw new utils_1.ValidationError("Données invalides", zodDetails(parsed.error));
+    await enforceRateLimit(`google:${req.ip}`, GOOGLE_RATE_LIMIT, GOOGLE_RATE_WINDOW_SECONDS);
+    const result = await googleAuth.linkGoogleToAccount(req.userId, parsed.data.credential, requestCtx(req));
+    res.json((0, dto_2.ok)(result, undefined, "Compte Google lié."));
+}
+async function googleUnlink(req, res) {
+    const result = await googleAuth.unlinkGoogle(req.userId, requestCtx(req));
+    res.json((0, dto_2.ok)(result, undefined, "Compte Google dissocié."));
 }
 async function refresh(req, res) {
     const parsed = dto_1.refreshDto.safeParse(req.body);

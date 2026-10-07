@@ -63,6 +63,8 @@ export declare function getUserById(id: string): Promise<{
     status: string | null;
     passwordHash: string;
     mustChangePassword: boolean;
+    googleSub: string | null;
+    passwordSet: boolean;
     createdAt: Date | null;
     updatedAt: Date | null;
 }>;

@@ -50,6 +50,16 @@ export declare const loginDto: z.ZodObject<{
     password: string;
     rememberMe?: boolean | undefined;
 }>;
+export declare const googleCredentialDto: z.ZodObject<{
+    credential: z.ZodString;
+    rememberMe: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    credential: string;
+    rememberMe?: boolean | undefined;
+}, {
+    credential: string;
+    rememberMe?: boolean | undefined;
+}>;
 export declare const refreshDto: z.ZodObject<{
     refreshToken: z.ZodString;
 }, "strip", z.ZodTypeAny, {

@@ -12,11 +12,15 @@ router.post("/login", (0, utils_1.asyncHandler)(auth_controller_1.login));
 router.post("/refresh", (0, utils_1.asyncHandler)(auth_controller_1.refresh));
 router.post("/forgot-password", (0, utils_1.asyncHandler)(auth_controller_1.forgotPassword));
 router.post("/reset-password", (0, utils_1.asyncHandler)(auth_controller_1.resetPassword));
+router.get("/config", (0, utils_1.asyncHandler)(auth_controller_1.publicConfig));
+router.post("/google", (0, utils_1.asyncHandler)(auth_controller_1.googleSignIn));
 router.post("/logout", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.logout));
 router.get("/me", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.me));
 router.patch("/profile", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.updateProfile));
 router.get("/roles", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.getRoles));
 router.get("/permissions", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.getPermissions));
 router.post("/switch-role", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.switchRole));
+router.post("/google/link", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.googleLink));
+router.delete("/google", middleware_1.requireAuth, (0, utils_1.asyncHandler)(auth_controller_1.googleUnlink));
 exports.default = router;
 //# sourceMappingURL=auth.routes.js.map
