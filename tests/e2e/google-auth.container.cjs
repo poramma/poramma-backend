@@ -84,6 +84,13 @@ function idToken(claims = {}, opts = {}) {
     t(r.s === 200 && r.j?.data?.google === null, "sans GOOGLE_CLIENT_ID → google: null (le bouton se cache)", r.j);
     r = await call("POST", "/auth/google", null, { credential: idToken() });
     t(r.s === 503, "sans GOOGLE_CLIENT_ID → 503 explicite", r.s);
+    for (const [label, bad] of [["secret client collé à la place de l'ID", "GOCSPX-6JF_exemple_de_secret"], ["ID client précédé de GOCSPX-", "GOCSPX-571673797408-abc.apps.googleusercontent.com"], ["valeur sans le domaine Google", "571673797408-abc"]]) {
+      process.env.GOOGLE_CLIENT_ID = bad;
+      r = await call("GET", "/auth/config");
+      t(r.s === 200 && r.j?.data?.google === null, `valeur invalide refusée, bouton masqué : ${label}`, r.j);
+      const rr = await call("POST", "/auth/google", null, { credential: idToken() });
+      t(rr.s === 503, `valeur invalide : /auth/google → 503 (${label})`, rr.s);
+    }
     process.env.GOOGLE_CLIENT_ID = CLIENT_ID;
 
     section("2. Inscription avec Google (nouveau compte)");

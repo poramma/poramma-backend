@@ -30,12 +30,28 @@ export interface GoogleIdentity {
   picture: string | null;
 }
 
-/** Identifiants client acceptés ; vide = la connexion Google n'est pas configurée. */
+// Un identifiant client Google ressemble à « 123456789012-abc….apps.googleusercontent.com ». Le SECRET client
+// (« GOCSPX-… »), lui, ne doit jamais être utilisé ici : le flux par ID token n'en a pas besoin. Une valeur qui
+// n'a pas cette forme (secret collé à la place, préfixe parasite…) ferait échouer chez Google, côté navigateur,
+// avec un message obscur (« invalid_client ») : on la refuse dès le démarrage, avec une consigne claire.
+const CLIENT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*\.apps\.googleusercontent\.com$/;
+let warnedInvalid = false;
+
+/** Identifiants client acceptés ; vide = la connexion Google n'est pas (correctement) configurée. */
 export function googleClientIds(): string[] {
-  return (process.env.GOOGLE_CLIENT_ID ?? "")
+  const all = (process.env.GOOGLE_CLIENT_ID ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+  const valid = all.filter((id) => CLIENT_ID_RE.test(id) && !id.startsWith("GOCSPX-"));
+  if (valid.length !== all.length && !warnedInvalid) {
+    warnedInvalid = true;
+    console.error(
+      "[auth] GOOGLE_CLIENT_ID invalide : attendu « <chiffres>-<texte>.apps.googleusercontent.com » (l'ID client de la console Google, " +
+        "pas le secret « GOCSPX-… » et sans préfixe). La connexion Google reste désactivée tant que la valeur n'est pas corrigée."
+    );
+  }
+  return valid;
 }
 
 export function isGoogleConfigured(): boolean {
