@@ -12,6 +12,8 @@ exports.users = exports.identity.table("users", {
     status: (0, pg_core_1.varchar)("status", { length: 20 }).default("UNVERIFIED"),
     passwordHash: (0, pg_core_1.varchar)("password_hash", { length: 255 }).notNull(),
     mustChangePassword: (0, pg_core_1.boolean)("must_change_password").notNull().default(false),
+    googleSub: (0, pg_core_1.varchar)("google_sub", { length: 64 }).unique(),
+    passwordSet: (0, pg_core_1.boolean)("password_set").notNull().default(true),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
 });

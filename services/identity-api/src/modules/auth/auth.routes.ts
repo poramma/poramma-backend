@@ -13,6 +13,10 @@ import {
   switchRole,
   forgotPassword,
   resetPassword,
+  publicConfig,
+  googleSignIn,
+  googleLink,
+  googleUnlink,
 } from "./auth.controller";
 import { requireAuth } from "../../shared/middleware";
 import { asyncHandler } from "@poramma/utils";
@@ -27,6 +31,8 @@ router.post("/login", asyncHandler(login));
 router.post("/refresh", asyncHandler(refresh));
 router.post("/forgot-password", asyncHandler(forgotPassword));
 router.post("/reset-password", asyncHandler(resetPassword));
+router.get("/config", asyncHandler(publicConfig));
+router.post("/google", asyncHandler(googleSignIn));
 
 // Routes authentifiées : requireAuth renseigne (req as any).userId/roleName/roleLevel/permissions/sessionId
 router.post("/logout", requireAuth, asyncHandler(logout));
@@ -35,5 +41,7 @@ router.patch("/profile", requireAuth, asyncHandler(updateProfile));
 router.get("/roles", requireAuth, asyncHandler(getRoles));
 router.get("/permissions", requireAuth, asyncHandler(getPermissions));
 router.post("/switch-role", requireAuth, asyncHandler(switchRole));
+router.post("/google/link", requireAuth, asyncHandler(googleLink));
+router.delete("/google", requireAuth, asyncHandler(googleUnlink));
 
 export default router;

@@ -29,6 +29,12 @@ export const loginDto = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+// Connexion / inscription / liaison Google : `credential` = ID token fourni par Google Identity Services.
+export const googleCredentialDto = z.object({
+  credential: z.string().min(20).max(4096),
+  rememberMe: z.boolean().optional(),
+});
+
 // Refresh token
 export const refreshDto = z.object({
   refreshToken: z.string(),

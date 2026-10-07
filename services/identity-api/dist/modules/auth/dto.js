@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetPasswordDto = exports.forgotPasswordDto = exports.switchRoleDto = exports.updateProfileDto = exports.refreshDto = exports.loginDto = exports.verifyOtpDto = exports.registerDto = void 0;
+exports.resetPasswordDto = exports.forgotPasswordDto = exports.switchRoleDto = exports.updateProfileDto = exports.refreshDto = exports.googleCredentialDto = exports.loginDto = exports.verifyOtpDto = exports.registerDto = void 0;
 const zod_1 = require("zod");
 const dto_1 = require("@poramma/dto");
 exports.registerDto = zod_1.z.object({
@@ -20,6 +20,10 @@ exports.verifyOtpDto = zod_1.z.object({
 exports.loginDto = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(1),
+    rememberMe: zod_1.z.boolean().optional(),
+});
+exports.googleCredentialDto = zod_1.z.object({
+    credential: zod_1.z.string().min(20).max(4096),
     rememberMe: zod_1.z.boolean().optional(),
 });
 exports.refreshDto = zod_1.z.object({

@@ -1,4 +1,5 @@
-interface AuthResponse {
+import { users } from "../../db/schema.identity";
+export interface AuthResponse {
     accessToken: string;
     refreshToken: string;
     user: FullUser;
@@ -19,6 +20,10 @@ export interface FullUser {
     roles: any[];
     activeRole: any;
     permissions: string[];
+    authMethods: {
+        password: boolean;
+        google: boolean;
+    };
 }
 export declare function buildFullUser(userId: string): Promise<FullUser>;
 export declare function register(email: string, password: string, firstName: string, lastName: string): Promise<{
@@ -48,6 +53,8 @@ export declare function register(email: string, password: string, firstName: str
     status: string | null;
     passwordHash: string;
     mustChangePassword: boolean;
+    googleSub: string | null;
+    passwordSet: boolean;
     createdAt: Date | null;
     updatedAt: Date | null;
 }>;
@@ -61,6 +68,7 @@ export declare function verifyOtp(email: string, otp: string, password: string, 
     };
 }>;
 export declare function login(email: string, password: string, ip?: string | null, ua?: string | null, rememberMe?: boolean, clientApp?: "embassy" | "community"): Promise<AuthResponse>;
+export declare function openSession(user: typeof users.$inferSelect, ip: string | null | undefined, ua: string | null | undefined, rememberMe: boolean, method: "password" | "google"): Promise<AuthResponse>;
 export declare function refresh(refreshToken: string): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -76,6 +84,8 @@ export declare function updateProfile(userId: string, data: any): Promise<{
     status: string | null;
     passwordHash: string;
     mustChangePassword: boolean;
+    googleSub: string | null;
+    passwordSet: boolean;
     createdAt: Date | null;
     updatedAt: Date | null;
 }>;
@@ -106,5 +116,4 @@ export declare function resetPasswordWithCode(params: {
 }): Promise<{
     email: string;
 }>;
-export {};
 //# sourceMappingURL=auth.service.d.ts.map

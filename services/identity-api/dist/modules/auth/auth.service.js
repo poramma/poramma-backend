@@ -9,6 +9,7 @@ exports.checkUser = checkUser;
 exports.saveOpt = saveOpt;
 exports.verifyOtp = verifyOtp;
 exports.login = login;
+exports.openSession = openSession;
 exports.refresh = refresh;
 exports.logout = logout;
 exports.getProfile = getProfile;
@@ -144,6 +145,7 @@ async function buildFullUser(userId) {
         roles: roleShapes,
         activeRole: activeAssignment?.role ?? undefined,
         permissions: rbac.permissionCodes,
+        authMethods: { password: user.passwordSet, google: !!user.googleSub },
     };
 }
 function signTokens(userId, email, sessionId, rbac, rememberMe) {
@@ -274,6 +276,9 @@ async function login(email, password, ip, ua, rememberMe = false, clientApp = "e
         });
         throw new utils_1.UnauthorizedError("Compte suspendu");
     }
+    return openSession(user, ip, ua, rememberMe, "password");
+}
+async function openSession(user, ip, ua, rememberMe, method) {
     const rbac = await getRbacContext(user.id);
     const [session] = await connection_1.db
         .insert(schema_identity_1.sessions)
@@ -290,6 +295,7 @@ async function login(email, password, ip, ua, rememberMe = false, clientApp = "e
         entityId: session.id,
         actor: { userId: user.id, roleName: rbac.roleName },
         sessionId: session.id,
+        details: { method },
         ip,
         ua,
     });
@@ -429,7 +435,7 @@ async function resetPasswordWithCode(params) {
         throw invalid();
     const passwordHash = await bcryptjs_1.default.hash(params.newPassword, 10);
     const activeSessions = await connection_1.db.transaction(async (tx) => {
-        await tx.update(schema_identity_1.users).set({ passwordHash, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_identity_1.users.id, user.id));
+        await tx.update(schema_identity_1.users).set({ passwordHash, passwordSet: true, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_identity_1.users.id, user.id));
         await tx.update(schema_identity_1.otps).set({ consumedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_identity_1.otps.id, record.id));
         return tx.update(schema_identity_1.sessions).set({ revokedAt: new Date() }).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_identity_1.sessions.userId, user.id), (0, drizzle_orm_1.isNull)(schema_identity_1.sessions.revokedAt))).returning({ id: schema_identity_1.sessions.id });
     });

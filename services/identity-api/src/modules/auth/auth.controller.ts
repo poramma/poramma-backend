@@ -8,8 +8,11 @@ import {
   switchRoleDto,
   forgotPasswordDto,
   resetPasswordDto,
+  googleCredentialDto,
 } from "./dto";
 import * as authService from "./auth.service";
+import * as googleAuth from "./google-auth.service";
+import { googleClientIds } from "./google";
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
 import { sendMail, renderEmail } from "@poramma/mailer";
@@ -121,6 +124,48 @@ export async function login(req: Request, res: Response) {
     clientApp
   );
   res.json(ok(tokens));
+}
+
+// GET /auth/config — configuration publique du client (identifiant OAuth Google : non secret).
+// Le portail le lit au chargement : un seul endroit à configurer (l'API), pas de variable à rebâtir côté front.
+export async function publicConfig(_req: Request, res: Response) {
+  const [clientId] = googleClientIds();
+  res.json(ok({ google: clientId ? { clientId } : null }));
+}
+
+// Un jeton Google forgé ne se devine pas (signature RS256) : la limite ne sert qu'à borner la charge, et reste
+// large pour qu'un réseau partagé (campus, wifi de l'ambassade) ne se bloque pas lui-même.
+const GOOGLE_RATE_LIMIT = 60;
+const GOOGLE_RATE_WINDOW_SECONDS = 15 * 60;
+
+function requestCtx(req: Request) {
+  const ua = req.headers["user-agent"];
+  return { ip: req.ip, ua: typeof ua === "string" ? ua : null };
+}
+
+// POST /auth/google — connexion, inscription ou liaison automatique (voir google-auth.service.ts).
+export async function googleSignIn(req: Request, res: Response) {
+  const parsed = googleCredentialDto.safeParse(req.body);
+  if (!parsed.success) throw new ValidationError("Données invalides", zodDetails(parsed.error));
+  await enforceRateLimit(`google:${req.ip}`, GOOGLE_RATE_LIMIT, GOOGLE_RATE_WINDOW_SECONDS);
+
+  const result = await googleAuth.signInWithGoogle(parsed.data.credential, { ...requestCtx(req), rememberMe: parsed.data.rememberMe ?? false });
+  res.status(result.isNewUser ? 201 : 200).json(ok(result, undefined, result.isNewUser ? "Compte créé avec Google." : undefined));
+}
+
+// POST /auth/google/link — authentifié : lie un compte Google (même adresse email) au compte courant.
+export async function googleLink(req: Request, res: Response) {
+  const parsed = googleCredentialDto.safeParse(req.body);
+  if (!parsed.success) throw new ValidationError("Données invalides", zodDetails(parsed.error));
+  await enforceRateLimit(`google:${req.ip}`, GOOGLE_RATE_LIMIT, GOOGLE_RATE_WINDOW_SECONDS);
+  const result = await googleAuth.linkGoogleToAccount((req as any).userId as string, parsed.data.credential, requestCtx(req));
+  res.json(ok(result, undefined, "Compte Google lié."));
+}
+
+// DELETE /auth/google — authentifié : dissocie Google (un mot de passe doit exister).
+export async function googleUnlink(req: Request, res: Response) {
+  const result = await googleAuth.unlinkGoogle((req as any).userId as string, requestCtx(req));
+  res.json(ok(result, undefined, "Compte Google dissocié."));
 }
 
 // POST /refresh

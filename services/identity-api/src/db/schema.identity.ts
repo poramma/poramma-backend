@@ -16,6 +16,13 @@ export const users = identity.table("users", {
   // place) — force un changement avant d'accéder à l'application (voir
   // frontend-community routes/RequireAuth.tsx : RequireOnboarded).
   mustChangePassword: boolean("must_change_password").notNull().default(false),
+  // Identifiant stable du compte Google lié (claim `sub` de l'ID token) — jamais l'email, qui peut changer
+  // côté Google. Unique : un compte Google n'ouvre qu'un seul compte Poramma.
+  googleSub: varchar("google_sub", { length: 64 }).unique(),
+  // Faux pour un compte créé via Google (password_hash = valeur aléatoire inutilisable) tant que
+  // l'utilisateur n'a pas défini son propre mot de passe : on ne peut alors ni se connecter par mot de
+  // passe, ni dissocier Google sans en définir un (sinon le compte deviendrait inaccessible).
+  passwordSet: boolean("password_set").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

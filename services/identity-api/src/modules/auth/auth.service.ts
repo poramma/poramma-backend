@@ -38,7 +38,7 @@ interface RbacContext {
   permissionCodes: string[];
 }
 
-interface AuthResponse {
+export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: FullUser;
@@ -60,6 +60,8 @@ export interface FullUser {
   roles: any[];
   activeRole: any;
   permissions: string[];
+  /** Comment ce compte peut se connecter : un mot de passe défini par l'usager, et/ou un compte Google lié. */
+  authMethods: { password: boolean; google: boolean };
 }
 
 /**
@@ -201,6 +203,7 @@ export async function buildFullUser(userId: string): Promise<FullUser> {
     roles: roleShapes,
     activeRole: activeAssignment?.role ?? undefined,
     permissions: rbac.permissionCodes,
+    authMethods: { password: user.passwordSet, google: !!user.googleSub },
   };
 }
 
@@ -386,6 +389,21 @@ export async function login(
     throw new UnauthorizedError("Compte suspendu");
   }
 
+  return openSession(user, ip, ua, rememberMe, "password");
+}
+
+/**
+ * Ouvre une session pour un compte DÉJÀ authentifié (mot de passe vérifié, ou jeton Google vérifié) :
+ * ligne `sessions`, jetons, clé Redis de session active, audit LOGIN. Un seul chemin pour toutes les
+ * méthodes de connexion, afin qu'elles produisent exactement la même session.
+ */
+export async function openSession(
+  user: typeof users.$inferSelect,
+  ip: string | null | undefined,
+  ua: string | null | undefined,
+  rememberMe: boolean,
+  method: "password" | "google"
+): Promise<AuthResponse> {
   const rbac = await getRbacContext(user.id);
 
   // Placeholder refresh hash — replaced right after signing, once the real
@@ -412,6 +430,7 @@ export async function login(
     entityId: session.id,
     actor: { userId: user.id, roleName: rbac.roleName },
     sessionId: session.id,
+    details: { method },
     ip,
     ua,
   });
@@ -612,7 +631,7 @@ export async function resetPasswordWithCode(params: { email: string; code: strin
 
   const passwordHash = await bcrypt.hash(params.newPassword, 10);
   const activeSessions = await db.transaction(async (tx) => {
-    await tx.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
+    await tx.update(users).set({ passwordHash, passwordSet: true, updatedAt: new Date() }).where(eq(users.id, user.id));
     await tx.update(otps).set({ consumedAt: new Date() }).where(eq(otps.id, record.id));
     return tx.update(sessions).set({ revokedAt: new Date() }).where(and(eq(sessions.userId, user.id), isNull(sessions.revokedAt))).returning({ id: sessions.id });
   });
