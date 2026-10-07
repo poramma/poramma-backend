@@ -228,7 +228,7 @@ async function verifyOtp(email, otp, password, firstName, lastName, phone) {
     });
     return { success: true, user: { id: created.user.id, email: created.user.email } };
 }
-async function login(email, password, ip, ua, rememberMe = false) {
+async function login(email, password, ip, ua, rememberMe = false, clientApp = "embassy") {
     const [user] = await connection_1.db.select().from(schema_identity_1.users).where((0, drizzle_orm_1.eq)(schema_identity_1.users.email, email));
     if (!user) {
         await (0, audit_1.writeAudit)({
@@ -241,6 +241,7 @@ async function login(email, password, ip, ua, rememberMe = false) {
             details: { reason: "UNKNOWN_EMAIL" },
             ip,
             ua,
+            domain: clientApp === "community" ? "COMMUNITY" : "EMBASSY",
         });
         throw new utils_1.UnauthorizedError("Identifiants invalides");
     }

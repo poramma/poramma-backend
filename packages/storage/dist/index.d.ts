@@ -1,5 +1,6 @@
 import type { Readable } from "stream";
 export declare function initStorage(): void;
+export declare function pingStorage(): Promise<void>;
 export declare function ensureBucket(): Promise<void>;
 export interface UploadResult {
     key: string;

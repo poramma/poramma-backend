@@ -7,6 +7,7 @@ exports.supportTickets = services_1.ambassade.table("support_tickets", {
     id: (0, pg_core_1.text)("id").primaryKey(),
     reference: (0, pg_core_1.varchar)("reference", { length: 30 }).notNull().unique(),
     userId: (0, pg_core_1.uuid)("user_id").notNull(),
+    target: (0, pg_core_1.varchar)("target", { length: 10 }).notNull().default("EMBASSY"),
     category: (0, pg_core_1.varchar)("category", { length: 20 }).notNull(),
     subject: (0, pg_core_1.varchar)("subject", { length: 150 }).notNull(),
     linkedReference: (0, pg_core_1.varchar)("linked_reference", { length: 60 }),
@@ -21,6 +22,7 @@ exports.supportTickets = services_1.ambassade.table("support_tickets", {
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
 }, (t) => [
+    (0, pg_core_1.index)("support_tickets_target_status_idx").on(t.target, t.status, t.lastMessageAt),
     (0, pg_core_1.index)("support_tickets_status_idx").on(t.status, t.lastMessageAt),
     (0, pg_core_1.index)("support_tickets_user_idx").on(t.userId),
     (0, pg_core_1.index)("support_tickets_assigned_idx").on(t.assignedTo),

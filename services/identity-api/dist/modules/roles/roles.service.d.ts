@@ -13,6 +13,7 @@ export declare function listRoles(): Promise<{
     description: string | null;
     level: number;
     isSystem: boolean | null;
+    scope: string;
 }[]>;
 export declare function getRole(id: string): Promise<{
     permissions: {
@@ -29,6 +30,7 @@ export declare function getRole(id: string): Promise<{
     description: string | null;
     level: number;
     isSystem: boolean | null;
+    scope: string;
 }>;
 export declare function createRole(data: {
     name: string;
@@ -42,6 +44,7 @@ export declare function createRole(data: {
     description: string | null;
     level: number;
     isSystem: boolean | null;
+    scope: string;
 }>;
 export declare function updateRole(id: string, data: Partial<{
     name: string;
@@ -62,6 +65,7 @@ export declare function updateRole(id: string, data: Partial<{
     description: string | null;
     level: number;
     isSystem: boolean | null;
+    scope: string;
 }>;
 export declare function deleteRole(id: string): Promise<void>;
 export declare function listPermissions(): Promise<{
@@ -73,13 +77,14 @@ export declare function listPermissions(): Promise<{
     action: string;
     category: string | null;
     minRoleLevel: number;
+    scope: string;
 }[]>;
 export declare function assignPermissionToRole(roleId: string, permissionCode: string): Promise<void>;
 export declare function removePermissionFromRole(roleId: string, permissionCode: string): Promise<void>;
 export declare function assignRoleToUser(targetUserId: string, roleId: string, assignedBy: string): Promise<{
     id: string;
-    roleId: string;
     userId: string;
+    roleId: string;
     assignedBy: string | null;
     assignedAt: Date | null;
     expiresAt: Date | null;

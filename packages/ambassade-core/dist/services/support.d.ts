@@ -1,19 +1,24 @@
 import type { Db } from "../db-type";
-export declare const TICKET_CATEGORIES: readonly ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "OTHER"];
+export declare const TICKET_TARGETS: readonly ["EMBASSY", "COMMUNITY"];
+export type TicketTarget = (typeof TICKET_TARGETS)[number];
+export declare const TICKET_CATEGORIES: readonly ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "REPORT", "OTHER"];
+export declare const CATEGORIES_BY_TARGET: Record<TicketTarget, readonly string[]>;
 export declare const TICKET_STATUSES: readonly ["OPEN", "IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"];
 export declare const TICKET_PRIORITIES: readonly ["LOW", "NORMAL", "HIGH", "URGENT"];
-export declare function listAdminIds(db: Db): Promise<string[]>;
-export declare function listAssignees(db: Db): Promise<{
+export declare function listAdminIds(db: Db, target: TicketTarget): Promise<string[]>;
+export declare function listAssignees(db: Db, target: TicketTarget): Promise<{
     id: string;
     name: string;
 }[]>;
 export declare function createTicket(db: Db, userId: string, data: {
+    target: TicketTarget;
     category: string;
     subject: string;
     message: string;
     linkedReference?: string | null;
 }): Promise<{
     id: string;
+    target: TicketTarget;
     reference: string;
     subject: string;
     category: string;
@@ -26,6 +31,7 @@ export declare function createTicket(db: Db, userId: string, data: {
 }>;
 export declare function listTicketsForUser(db: Db, userId: string): Promise<{
     id: string;
+    target: TicketTarget;
     reference: string;
     subject: string;
     category: string;
@@ -45,6 +51,7 @@ export declare function getTicketForUser(db: Db, userId: string, id: string): Pr
         createdAt: Date | null;
     }[];
     id: string;
+    target: TicketTarget;
     reference: string;
     subject: string;
     category: string;
@@ -64,6 +71,7 @@ export declare function addUserMessage(db: Db, userId: string, id: string, conte
 }>;
 export declare function resolveByUser(db: Db, userId: string, id: string): Promise<{
     id: string;
+    target: TicketTarget;
     reference: string;
     subject: string;
     category: string;
@@ -83,11 +91,12 @@ export interface TicketFilters {
     page?: number;
     limit?: number;
 }
-export declare function listTickets(db: Db, actorId: string, filters: TicketFilters): Promise<{
+export declare function listTickets(db: Db, target: TicketTarget, actorId: string, filters: TicketFilters): Promise<{
     data: {
         id: string;
         reference: string;
         subject: string;
+        target: TicketTarget;
         category: string;
         linkedReference: string | null;
         status: string;
@@ -123,7 +132,7 @@ export declare function listTickets(db: Db, actorId: string, filters: TicketFilt
         mine: number;
     };
 }>;
-export declare function getTicketForStaff(db: Db, id: string): Promise<{
+export declare function getTicketForStaff(db: Db, target: TicketTarget, id: string): Promise<{
     messages: {
         id: string;
         authorType: string;
@@ -135,6 +144,7 @@ export declare function getTicketForStaff(db: Db, id: string): Promise<{
     id: string;
     reference: string;
     subject: string;
+    target: TicketTarget;
     category: string;
     linkedReference: string | null;
     status: string;
@@ -157,7 +167,7 @@ export declare function getTicketForStaff(db: Db, id: string): Promise<{
     resolvedAt: Date | null;
     closedAt: Date | null;
 }>;
-export declare function addStaffMessage(db: Db, id: string, actorId: string, content: string, isInternal: boolean): Promise<{
+export declare function addStaffMessage(db: Db, target: TicketTarget, id: string, actorId: string, content: string, isInternal: boolean): Promise<{
     messages: {
         id: string;
         authorType: string;
@@ -169,6 +179,7 @@ export declare function addStaffMessage(db: Db, id: string, actorId: string, con
     id: string;
     reference: string;
     subject: string;
+    target: TicketTarget;
     category: string;
     linkedReference: string | null;
     status: string;
@@ -191,7 +202,7 @@ export declare function addStaffMessage(db: Db, id: string, actorId: string, con
     resolvedAt: Date | null;
     closedAt: Date | null;
 }>;
-export declare function updateTicket(db: Db, id: string, actorId: string, patch: {
+export declare function updateTicket(db: Db, target: TicketTarget, id: string, actorId: string, patch: {
     status?: string;
     priority?: string;
     assignedTo?: string | null;
@@ -207,6 +218,7 @@ export declare function updateTicket(db: Db, id: string, actorId: string, patch:
     id: string;
     reference: string;
     subject: string;
+    target: TicketTarget;
     category: string;
     linkedReference: string | null;
     status: string;

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TICKET_PRIORITIES = exports.TICKET_STATUSES = exports.TICKET_CATEGORIES = void 0;
+exports.TICKET_PRIORITIES = exports.TICKET_STATUSES = exports.CATEGORIES_BY_TARGET = exports.TICKET_CATEGORIES = exports.TICKET_TARGETS = void 0;
 exports.listAdminIds = listAdminIds;
 exports.listAssignees = listAssignees;
 exports.createTicket = createTicket;
@@ -22,7 +22,12 @@ const support_1 = require("../schema/support");
 const identity_1 = require("../schema/identity");
 const identity_2 = require("./identity");
 const notifications_1 = require("./notifications");
-exports.TICKET_CATEGORIES = ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "OTHER"];
+exports.TICKET_TARGETS = ["EMBASSY", "COMMUNITY"];
+exports.TICKET_CATEGORIES = ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "REPORT", "OTHER"];
+exports.CATEGORIES_BY_TARGET = {
+    EMBASSY: ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "OTHER"],
+    COMMUNITY: ["ACCOUNT", "TECHNICAL", "REPORT", "OTHER"],
+};
 exports.TICKET_STATUSES = ["OPEN", "IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"];
 exports.TICKET_PRIORITIES = ["LOW", "NORMAL", "HIGH", "URGENT"];
 const ACTIVE_STATUSES = ["OPEN", "IN_PROGRESS", "WAITING_USER"];
@@ -32,6 +37,7 @@ const CATEGORY_LABEL = {
     RENDEZ_VOUS: "Un rendez-vous",
     REGISTRATION: "Enregistrement / INUE",
     TECHNICAL: "Problème technique",
+    REPORT: "Signalement (contenu ou comportement)",
     OTHER: "Autre question",
 };
 const STATUS_LABEL = {
@@ -42,7 +48,9 @@ const STATUS_LABEL = {
     CLOSED: "Clôturé",
 };
 const PRIORITY_LABEL = { LOW: "Basse", NORMAL: "Normale", HIGH: "Haute", URGENT: "Urgente" };
-const EMBASSY_LABEL = "Ambassade du Mali";
+const TEAM_LABEL = { EMBASSY: "Ambassade du Mali", COMMUNITY: "Support Poramma Communauté" };
+const STAFF_ROLES = { EMBASSY: ["ADMIN"], COMMUNITY: ["COMMUNITY_ADMIN", "COMMUNITY_SUPPORT"] };
+const staffUrl = (target, id) => (target === "COMMUNITY" ? `/admin/support/${id}` : `/support-tickets/${id}`);
 function newId(prefix) {
     return `${prefix}-${crypto_1.default.randomUUID()}`;
 }
@@ -56,16 +64,16 @@ async function newReference(db) {
     throw new utils_1.ConflictError("Impossible de générer un numéro de ticket, réessayez.");
 }
 const excerpt = (text, max = 220) => (text.length > max ? `${text.slice(0, max)}…` : text);
-async function listAdminIds(db) {
+async function listAdminIds(db, target) {
     const rows = await db
         .selectDistinct({ userId: identity_1.identityUserRoles.userId })
         .from(identity_1.identityUserRoles)
         .innerJoin(identity_1.identityRoles, (0, drizzle_orm_1.eq)(identity_1.identityRoles.id, identity_1.identityUserRoles.roleId))
-        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(identity_1.identityRoles.name, "ADMIN"), (0, drizzle_orm_1.eq)(identity_1.identityUserRoles.isActive, true)));
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(identity_1.identityRoles.name, STAFF_ROLES[target]), (0, drizzle_orm_1.eq)(identity_1.identityUserRoles.isActive, true)));
     return rows.map((r) => r.userId);
 }
-async function listAssignees(db) {
-    const ids = await listAdminIds(db);
+async function listAssignees(db, target) {
+    const ids = await listAdminIds(db, target);
     const users = await (0, identity_2.getUsersByIds)(db, ids);
     return ids
         .map((id) => {
@@ -75,7 +83,7 @@ async function listAssignees(db) {
         .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 }
 async function staffRecipients(db, ticket, exceptUserId) {
-    const ids = ticket.assignedTo ? [ticket.assignedTo] : await listAdminIds(db);
+    const ids = ticket.assignedTo ? [ticket.assignedTo] : await listAdminIds(db, ticket.target);
     return ids.filter((id) => id !== exceptUserId);
 }
 async function notifyStaff(db, ticket, params) {
@@ -86,8 +94,12 @@ async function notifyStaff(db, ticket, params) {
             title: params.title,
             body: params.body,
             payload: { supportTicketId: ticket.id, reference: ticket.reference },
-            actionUrl: `/support-tickets/${ticket.id}`,
-            email: params.email === false ? undefined : { subject: `[Support ${ticket.reference}] ${params.title}` },
+            actionUrl: staffUrl(ticket.target, ticket.id),
+            email: params.email === false
+                ? undefined
+                : ticket.target === "COMMUNITY"
+                    ? { subject: `[Support ${ticket.reference}] ${params.title}`, actionLabel: "Ouvrir le ticket" }
+                    : { subject: `[Support ${ticket.reference}] ${params.title}` },
         });
     }
 }
@@ -122,6 +134,7 @@ async function getTicketRow(db, id) {
 function publicTicket(t) {
     return {
         id: t.id,
+        target: t.target,
         reference: t.reference,
         subject: t.subject,
         category: t.category,
@@ -133,11 +146,11 @@ function publicTicket(t) {
         resolvedAt: t.resolvedAt,
     };
 }
-function publicMessage(m, requesterName) {
+function publicMessage(m, requesterName, teamLabel) {
     return {
         id: m.id,
         authorType: m.authorType,
-        authorName: m.authorType === "USER" ? requesterName : m.authorType === "STAFF" ? EMBASSY_LABEL : null,
+        authorName: m.authorType === "USER" ? requesterName : m.authorType === "STAFF" ? teamLabel : null,
         content: m.content,
         createdAt: m.createdAt,
     };
@@ -146,13 +159,16 @@ async function requesterName(db, userId) {
     return (0, identity_2.getActorName)(db, userId);
 }
 async function createTicket(db, userId, data) {
+    if (!(exports.CATEGORIES_BY_TARGET[data.target] ?? []).includes(data.category)) {
+        throw new utils_1.ValidationError("Catégorie invalide pour ce destinataire", { category: ["invalid for target"] });
+    }
     const reference = await newReference(db);
     const id = newId("tkt");
     const user = await (0, identity_2.getUser)(db, userId);
     const name = user?.profile ? [user.profile.firstName, user.profile.lastName].filter(Boolean).join(" ") : "";
     const [ticket] = await db
         .insert(support_1.supportTickets)
-        .values({ id, reference, userId, category: data.category, subject: data.subject, linkedReference: data.linkedReference ?? null })
+        .values({ id, reference, userId, target: data.target, category: data.category, subject: data.subject, linkedReference: data.linkedReference ?? null })
         .returning();
     await db.insert(support_1.supportTicketMessages).values({
         id: newId("tmsg"),
@@ -169,7 +185,7 @@ async function createTicket(db, userId, data) {
     });
     await notifyRequester(db, ticket, {
         title: "Votre message a bien été transmis",
-        body: `Nous avons reçu votre message « ${data.subject} ». Numéro de suivi : ${reference}. Vous serez prévenu(e) dès qu'un agent vous répond.`,
+        body: `Nous avons reçu votre message « ${data.subject} ». Numéro de suivi : ${reference}. Vous serez prévenu(e) dès que ${data.target === "COMMUNITY" ? "le support de la communauté" : "l'ambassade"} vous répond.`,
         actionLabel: "Suivre mon ticket",
     });
     return publicTicket(ticket);
@@ -190,7 +206,8 @@ async function getTicketForUser(db, userId, id) {
             .orderBy(support_1.supportTicketMessages.createdAt),
         requesterName(db, userId),
     ]);
-    return { ...publicTicket(ticket), messages: messages.map((m) => publicMessage(m, name)) };
+    const label = TEAM_LABEL[ticket.target];
+    return { ...publicTicket(ticket), messages: messages.map((m) => publicMessage(m, name, label)) };
 }
 async function addUserMessage(db, userId, id, content) {
     const ticket = await getTicketRow(db, id);
@@ -216,7 +233,7 @@ async function addUserMessage(db, userId, id, content) {
         title: `${reopened ? "Ticket rouvert" : "Nouvelle réponse"} — ${ticket.reference}`,
         body: `${name} : ${excerpt(content)}`,
     });
-    return publicMessage(message, name);
+    return publicMessage(message, name, TEAM_LABEL[ticket.target]);
 }
 async function resolveByUser(db, userId, id) {
     const ticket = await getTicketRow(db, id);
@@ -245,6 +262,7 @@ async function enrichStaff(db, rows) {
             id: t.id,
             reference: t.reference,
             subject: t.subject,
+            target: t.target,
             category: t.category,
             linkedReference: t.linkedReference,
             status: t.status,
@@ -260,8 +278,9 @@ async function enrichStaff(db, rows) {
         };
     });
 }
-async function listTickets(db, actorId, filters) {
-    const conditions = [];
+async function listTickets(db, target, actorId, filters) {
+    const forTarget = (0, drizzle_orm_1.eq)(support_1.supportTickets.target, target);
+    const conditions = [forTarget];
     if (filters.status === "ACTIVE")
         conditions.push((0, drizzle_orm_1.inArray)(support_1.supportTickets.status, ACTIVE_STATUSES));
     else if (filters.status)
@@ -299,15 +318,15 @@ async function listTickets(db, actorId, filters) {
             .limit(limit)
             .offset((page - 1) * limit),
         db.select({ total: (0, drizzle_orm_1.sql) `count(*)::int` }).from(support_1.supportTickets).where(where),
-        db.select({ status: support_1.supportTickets.status, n: (0, drizzle_orm_1.sql) `count(*)::int` }).from(support_1.supportTickets).groupBy(support_1.supportTickets.status),
+        db.select({ status: support_1.supportTickets.status, n: (0, drizzle_orm_1.sql) `count(*)::int` }).from(support_1.supportTickets).where(forTarget).groupBy(support_1.supportTickets.status),
         db
             .select({ unassigned: (0, drizzle_orm_1.sql) `count(*)::int` })
             .from(support_1.supportTickets)
-            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.isNull)(support_1.supportTickets.assignedTo), (0, drizzle_orm_1.inArray)(support_1.supportTickets.status, ACTIVE_STATUSES))),
+            .where((0, drizzle_orm_1.and)(forTarget, (0, drizzle_orm_1.isNull)(support_1.supportTickets.assignedTo), (0, drizzle_orm_1.inArray)(support_1.supportTickets.status, ACTIVE_STATUSES))),
         db
             .select({ mine: (0, drizzle_orm_1.sql) `count(*)::int` })
             .from(support_1.supportTickets)
-            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(support_1.supportTickets.assignedTo, actorId), (0, drizzle_orm_1.inArray)(support_1.supportTickets.status, ACTIVE_STATUSES))),
+            .where((0, drizzle_orm_1.and)(forTarget, (0, drizzle_orm_1.eq)(support_1.supportTickets.assignedTo, actorId), (0, drizzle_orm_1.inArray)(support_1.supportTickets.status, ACTIVE_STATUSES))),
     ]);
     const byStatus = Object.fromEntries(statusCounts.map((c) => [c.status, c.n]));
     return {
@@ -326,8 +345,14 @@ async function listTickets(db, actorId, filters) {
         },
     };
 }
-async function getTicketForStaff(db, id) {
+async function getTicketRowFor(db, target, id) {
     const ticket = await getTicketRow(db, id);
+    if (ticket.target !== target)
+        throw new utils_1.NotFoundError("Ticket introuvable");
+    return ticket;
+}
+async function getTicketForStaff(db, target, id) {
+    const ticket = await getTicketRowFor(db, target, id);
     const [[enriched], messages] = await Promise.all([
         enrichStaff(db, [ticket]),
         db.select().from(support_1.supportTicketMessages).where((0, drizzle_orm_1.eq)(support_1.supportTicketMessages.ticketId, id)).orderBy(support_1.supportTicketMessages.createdAt),
@@ -344,15 +369,15 @@ async function getTicketForStaff(db, id) {
         })),
     };
 }
-async function addStaffMessage(db, id, actorId, content, isInternal) {
-    const ticket = await getTicketRow(db, id);
+async function addStaffMessage(db, target, id, actorId, content, isInternal) {
+    const ticket = await getTicketRowFor(db, target, id);
     if (ticket.status === "CLOSED" && !isInternal)
         throw new utils_1.ConflictError("Ce ticket est clôturé : rouvrez-le avant de répondre à l'usager.");
     const actorName = await (0, identity_2.getActorName)(db, actorId);
     await db.insert(support_1.supportTicketMessages).values({ id: newId("tmsg"), ticketId: id, authorId: actorId, authorType: "STAFF", authorName: actorName, content, isInternal });
     if (isInternal) {
         await db.update(support_1.supportTickets).set({ updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(support_1.supportTickets.id, id));
-        return getTicketForStaff(db, id);
+        return getTicketForStaff(db, target, id);
     }
     const now = new Date();
     const [updated] = await db
@@ -370,13 +395,13 @@ async function addStaffMessage(db, id, actorId, content, isInternal) {
         .returning();
     await notifyRequester(db, updated, {
         title: `Réponse à votre ticket ${ticket.reference}`,
-        body: `L'ambassade a répondu à « ${ticket.subject} » :\n\n${excerpt(content)}`,
+        body: `${target === "COMMUNITY" ? "Le support de la communauté" : "L'ambassade"} a répondu à « ${ticket.subject} » :\n\n${excerpt(content)}`,
         actionLabel: "Voir la réponse",
     });
-    return getTicketForStaff(db, id);
+    return getTicketForStaff(db, target, id);
 }
-async function updateTicket(db, id, actorId, patch) {
-    const ticket = await getTicketRow(db, id);
+async function updateTicket(db, target, id, actorId, patch) {
+    const ticket = await getTicketRowFor(db, target, id);
     if (ticket.status === "CLOSED")
         throw new utils_1.ConflictError("Ce ticket est clôturé : il ne peut plus être modifié.");
     if (patch.status && !exports.TICKET_STATUSES.includes(patch.status))
@@ -393,7 +418,7 @@ async function updateTicket(db, id, actorId, patch) {
     if (patch.status === "IN_PROGRESS" && patch.assignedTo === undefined && !ticket.assignedTo)
         nextAssignee = actorId;
     if (nextAssignee !== undefined && nextAssignee !== ticket.assignedTo) {
-        if (nextAssignee && !(await listAdminIds(db)).includes(nextAssignee))
+        if (nextAssignee && !(await listAdminIds(db, target)).includes(nextAssignee))
             throw new utils_1.ValidationError("Cet utilisateur ne peut pas traiter les tickets", { assignedTo: ["not an admin"] });
         set.assignedTo = nextAssignee;
         events.push({ text: nextAssignee ? `Assigné à ${await (0, identity_2.getActorName)(db, nextAssignee)}` : "Assignation retirée", internal: true });
@@ -416,7 +441,7 @@ async function updateTicket(db, id, actorId, patch) {
         notifyStatus = patch.status;
     }
     if (Object.keys(set).length === 1)
-        return getTicketForStaff(db, id);
+        return getTicketForStaff(db, target, id);
     const [updated] = await db.update(support_1.supportTickets).set(set).where((0, drizzle_orm_1.eq)(support_1.supportTickets.id, id)).returning();
     for (const e of events)
         await addEvent(db, id, e.text, e.internal, actor);
@@ -431,7 +456,7 @@ async function updateTicket(db, id, actorId, patch) {
         });
     }
     if (notifyStatus === "IN_PROGRESS") {
-        await notifyRequester(db, updated, { title: `Votre ticket ${ticket.reference} est pris en charge`, body: `Un agent de l'ambassade traite « ${ticket.subject} ».`, actionLabel: "Suivre mon ticket" });
+        await notifyRequester(db, updated, { title: `Votre ticket ${ticket.reference} est pris en charge`, body: `${target === "COMMUNITY" ? "Le support de la communauté" : "Un agent de l'ambassade"} traite « ${ticket.subject} ».`, actionLabel: "Suivre mon ticket" });
     }
     else if (notifyStatus === "RESOLVED") {
         await notifyRequester(db, updated, { title: `Ticket ${ticket.reference} résolu`, body: `Votre demande « ${ticket.subject} » a été marquée comme résolue. Si le problème persiste, répondez simplement dans le ticket.`, actionLabel: "Voir mon ticket" });
@@ -439,6 +464,6 @@ async function updateTicket(db, id, actorId, patch) {
     else if (notifyStatus === "CLOSED") {
         await notifyRequester(db, updated, { title: `Ticket ${ticket.reference} clôturé`, body: `Votre demande « ${ticket.subject} » est clôturée. Pour toute nouvelle question, ouvrez un nouveau ticket.`, actionLabel: "Voir mon ticket" });
     }
-    return getTicketForStaff(db, id);
+    return getTicketForStaff(db, target, id);
 }
 //# sourceMappingURL=support.js.map

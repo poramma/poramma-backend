@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireAuth = requireAuth;
+exports.requirePermission = requirePermission;
 exports.requireValidatedProfile = requireValidatedProfile;
 exports.rateLimit = rateLimit;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -29,13 +30,24 @@ async function requireAuth(req, res, next) {
             throw new utils_1.UnauthorizedError("Session révoquée");
         }
         req.userId = decoded.sub;
+        req.roleName = decoded.roleName ?? null;
         req.roleLevel = decoded.roleLevel ?? 999;
+        req.permissions = decoded.permissions ?? [];
         req.sessionId = decoded.sessionId;
         next();
     }
     catch (err) {
         next(err);
     }
+}
+function requirePermission(code) {
+    return (req, _res, next) => {
+        const permissions = req.permissions || [];
+        if (!permissions.includes(code)) {
+            return next(new utils_1.ForbiddenError("Permission insuffisante"));
+        }
+        next();
+    };
 }
 async function requireValidatedProfile(req, res, next) {
     try {

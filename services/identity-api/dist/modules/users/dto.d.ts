@@ -6,14 +6,14 @@ export declare const createUserDto: z.ZodObject<{
     lastName: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
+    password: string;
 }, {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
+    password: string;
 }>;
 export declare const updatePersonalInfoDto: z.ZodObject<{
     firstName: z.ZodString;
@@ -27,7 +27,7 @@ export declare const updatePersonalInfoDto: z.ZodObject<{
     firstName: string;
     lastName: string;
     phone?: string | undefined;
-    userType?: "student" | "worker" | "migrant" | "other" | undefined;
+    userType?: "other" | "student" | "worker" | "migrant" | undefined;
     bio?: string | undefined;
     birthDate?: string | undefined;
     gender?: "MALE" | "FEMALE" | undefined;
@@ -35,7 +35,7 @@ export declare const updatePersonalInfoDto: z.ZodObject<{
     firstName: string;
     lastName: string;
     phone?: string | undefined;
-    userType?: "student" | "worker" | "migrant" | "other" | undefined;
+    userType?: "other" | "student" | "worker" | "migrant" | undefined;
     bio?: string | undefined;
     birthDate?: string | undefined;
     gender?: "MALE" | "FEMALE" | undefined;
@@ -46,13 +46,13 @@ export declare const updateAddressDto: z.ZodObject<{
     country: z.ZodOptional<z.ZodString>;
     zipCode: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    city?: string | undefined;
     address?: string | undefined;
+    city?: string | undefined;
     country?: string | undefined;
     zipCode?: string | undefined;
 }, {
-    city?: string | undefined;
     address?: string | undefined;
+    city?: string | undefined;
     country?: string | undefined;
     zipCode?: string | undefined;
 }>;
@@ -145,11 +145,11 @@ export declare const enrollStudentDto: z.ZodObject<{
     email: string;
     firstName: string;
     lastName: string;
-    password?: string | undefined;
     phone?: string | undefined;
     university?: string | undefined;
     faculty?: string | undefined;
     studyLevel?: string | undefined;
+    password?: string | undefined;
     scholarship?: {
         isRecipient: boolean;
         decisionNumber?: string | undefined;
@@ -159,11 +159,11 @@ export declare const enrollStudentDto: z.ZodObject<{
     email: string;
     firstName: string;
     lastName: string;
-    password?: string | undefined;
     phone?: string | undefined;
     university?: string | undefined;
     faculty?: string | undefined;
     studyLevel?: string | undefined;
+    password?: string | undefined;
     scholarship?: {
         isRecipient: boolean;
         decisionNumber?: string | undefined;

@@ -49,6 +49,7 @@ const rendezvous_routes_1 = __importDefault(require("./modules/rendezvous/rendez
 const campagnes_routes_1 = __importStar(require("./modules/campagnes/campagnes.routes"));
 const support_routes_1 = __importDefault(require("./modules/support/support.routes"));
 const culture_routes_1 = __importDefault(require("./modules/culture/culture.routes"));
+const admin_routes_1 = __importDefault(require("./modules/admin/admin.routes"));
 const app = (0, express_1.default)();
 app.set("trust proxy", process.env.TRUST_PROXY ? process.env.TRUST_PROXY.split(",").map((s) => s.trim()) : 1);
 const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174").split(",").map((o) => o.trim());
@@ -74,6 +75,7 @@ app.use("/", rendezvous_routes_1.default);
 app.use("/", campagnes_routes_1.default);
 app.use("/", support_routes_1.default);
 app.use("/", culture_routes_1.default);
+app.use("/", admin_routes_1.default);
 app.use(utils_1.errorHandler);
 exports.default = app;
 //# sourceMappingURL=app.js.map

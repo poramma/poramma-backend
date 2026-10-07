@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.initStorage = initStorage;
+exports.pingStorage = pingStorage;
 exports.ensureBucket = ensureBucket;
 exports.uploadObject = uploadObject;
 exports.getObject = getObject;
@@ -34,6 +35,9 @@ function getBucket() {
     if (!bucket)
         initStorage();
     return bucket;
+}
+async function pingStorage() {
+    await getClient().send(new client_s3_1.HeadBucketCommand({ Bucket: getBucket() }));
 }
 async function ensureBucket() {
     const c = getClient();

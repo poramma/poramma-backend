@@ -18,11 +18,11 @@ export declare const createAgentDto: z.ZodObject<{
     roleId: string;
     matricule: string;
     department: "CONSULAR" | "ADMINISTRATIVE" | "FINANCIAL" | "COMMUNICATION" | "SECURITY" | "STUDIES";
-    password?: string | undefined;
     phone?: string | null | undefined;
     roleTitle?: string | null | undefined;
     officeNumber?: string | null | undefined;
     active?: boolean | undefined;
+    password?: string | undefined;
 }, {
     email: string;
     firstName: string;
@@ -30,11 +30,11 @@ export declare const createAgentDto: z.ZodObject<{
     roleId: string;
     matricule: string;
     department: "CONSULAR" | "ADMINISTRATIVE" | "FINANCIAL" | "COMMUNICATION" | "SECURITY" | "STUDIES";
-    password?: string | undefined;
     phone?: string | null | undefined;
     roleTitle?: string | null | undefined;
     officeNumber?: string | null | undefined;
     active?: boolean | undefined;
+    password?: string | undefined;
 }>;
 export declare const updateAgentDto: z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
@@ -48,9 +48,9 @@ export declare const updateAgentDto: z.ZodObject<{
     active: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     email?: string | undefined;
+    phone?: string | null | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
-    phone?: string | null | undefined;
     matricule?: string | undefined;
     roleTitle?: string | null | undefined;
     department?: "CONSULAR" | "ADMINISTRATIVE" | "FINANCIAL" | "COMMUNICATION" | "SECURITY" | "STUDIES" | undefined;
@@ -58,9 +58,9 @@ export declare const updateAgentDto: z.ZodObject<{
     active?: boolean | undefined;
 }, {
     email?: string | undefined;
+    phone?: string | null | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
-    phone?: string | null | undefined;
     matricule?: string | undefined;
     roleTitle?: string | null | undefined;
     department?: "CONSULAR" | "ADMINISTRATIVE" | "FINANCIAL" | "COMMUNICATION" | "SECURITY" | "STUDIES" | undefined;

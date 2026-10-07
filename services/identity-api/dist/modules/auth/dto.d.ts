@@ -6,14 +6,14 @@ export declare const registerDto: z.ZodObject<{
     lastName: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
+    password: string;
 }, {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
+    password: string;
 }>;
 export declare const verifyOtpDto: z.ZodObject<{
     email: z.ZodString;
@@ -24,16 +24,16 @@ export declare const verifyOtpDto: z.ZodObject<{
     phone: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>>;
 }, "strip", z.ZodTypeAny, {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
+    password: string;
     otp: string;
     phone?: string | undefined;
 }, {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
+    password: string;
     otp: string;
     phone?: string | undefined;
 }>;
@@ -64,16 +64,16 @@ export declare const updateProfileDto: z.ZodObject<{
     phone: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>>;
     city: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    userType: "student" | "worker" | "migrant" | "other";
+    userType: "other" | "student" | "worker" | "migrant";
+    phone?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
-    phone?: string | undefined;
     city?: string | undefined;
 }, {
-    userType: "student" | "worker" | "migrant" | "other";
+    userType: "other" | "student" | "worker" | "migrant";
+    phone?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
-    phone?: string | undefined;
     city?: string | undefined;
 }>;
 export declare const switchRoleDto: z.ZodObject<{

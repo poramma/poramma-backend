@@ -52,6 +52,7 @@ exports.identityAgents = exports.identity.table("agents", {
 exports.identityRoles = exports.identity.table("roles", {
     id: (0, pg_core_1.uuid)("id").primaryKey(),
     name: (0, pg_core_1.varchar)("name", { length: 50 }).notNull(),
+    scope: (0, pg_core_1.varchar)("scope", { length: 12 }).notNull(),
 });
 exports.identityUserRoles = exports.identity.table("user_roles", {
     id: (0, pg_core_1.uuid)("id").primaryKey(),

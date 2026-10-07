@@ -18,5 +18,6 @@ exports.auditLogs = exports.audit.table("audit_logs", {
     ua: (0, pg_core_1.text)("ua"),
     sessionId: (0, pg_core_1.text)("session_id"),
     severity: (0, pg_core_1.varchar)("severity", { length: 20 }).notNull().default("INFO"),
-});
+    domain: (0, pg_core_1.varchar)("domain", { length: 12 }).notNull().default("EMBASSY"),
+}, (t) => [(0, pg_core_1.index)("audit_logs_domain_at_idx").on(t.domain, t.at)]);
 //# sourceMappingURL=audit.js.map

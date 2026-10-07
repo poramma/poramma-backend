@@ -10,17 +10,17 @@ export declare const updateOwnProfileDto: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     firstName?: string | undefined;
     lastName?: string | undefined;
-    city?: string | null | undefined;
     nationality?: string | null | undefined;
     address?: string | null | undefined;
+    city?: string | null | undefined;
     country?: string | null | undefined;
     dateOfBirth?: string | null | undefined;
 }, {
     firstName?: string | undefined;
     lastName?: string | undefined;
-    city?: string | null | undefined;
     nationality?: string | null | undefined;
     address?: string | null | undefined;
+    city?: string | null | undefined;
     country?: string | null | undefined;
     dateOfBirth?: string | null | undefined;
 }>;

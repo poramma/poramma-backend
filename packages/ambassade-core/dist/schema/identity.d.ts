@@ -699,6 +699,25 @@ export declare const identityRoles: import("drizzle-orm/pg-core").PgTableWithCol
         }, {}, {
             length: 50;
         }>;
+        scope: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scope";
+            tableName: "roles";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 12;
+        }>;
     };
     dialect: "pg";
 }>;

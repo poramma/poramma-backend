@@ -31,27 +31,30 @@ async function permissionsForRole(roleId) {
         .where((0, drizzle_orm_1.eq)(schema_identity_1.rolePermissions.roleId, roleId));
     return rows;
 }
+const SCOPE = "EMBASSY";
+function assertEmbassyRole(role) {
+    if (!role || role.scope !== SCOPE)
+        throw new utils_1.NotFoundError("Rôle introuvable");
+}
 async function listRoles() {
-    const allRoles = await connection_1.db.select().from(schema_identity_1.roles).orderBy(schema_identity_1.roles.level);
+    const allRoles = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.scope, SCOPE)).orderBy(schema_identity_1.roles.level);
     return Promise.all(allRoles.map(async (r) => ({ ...r, permissions: await permissionsForRole(r.id) })));
 }
 async function getRole(id) {
     const [role] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, id));
-    if (!role)
-        throw new utils_1.NotFoundError("Rôle introuvable");
+    assertEmbassyRole(role);
     return { ...role, permissions: await permissionsForRole(id) };
 }
 async function createRole(data) {
     const [role] = await connection_1.db
         .insert(schema_identity_1.roles)
-        .values({ name: data.name, description: data.description, level: data.level, isSystem: data.isSystem ?? false })
+        .values({ name: data.name, description: data.description, level: data.level, isSystem: data.isSystem ?? false, scope: SCOPE })
         .returning();
     return { ...role, permissions: [] };
 }
 async function updateRole(id, data) {
     const [existing] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, id));
-    if (!existing)
-        throw new utils_1.NotFoundError("Rôle introuvable");
+    assertEmbassyRole(existing);
     if (existing.isSystem)
         throw new utils_1.ForbiddenError("Les rôles système ne peuvent pas être modifiés");
     const [updated] = await connection_1.db
@@ -63,21 +66,19 @@ async function updateRole(id, data) {
 }
 async function deleteRole(id) {
     const [existing] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, id));
-    if (!existing)
-        throw new utils_1.NotFoundError("Rôle introuvable");
+    assertEmbassyRole(existing);
     if (existing.isSystem)
         throw new utils_1.ForbiddenError("Les rôles système ne peuvent pas être supprimés");
     await connection_1.db.delete(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, id));
 }
 async function listPermissions() {
-    return connection_1.db.select().from(schema_identity_1.permissions).orderBy(schema_identity_1.permissions.category, schema_identity_1.permissions.code);
+    return connection_1.db.select().from(schema_identity_1.permissions).where((0, drizzle_orm_1.eq)(schema_identity_1.permissions.scope, SCOPE)).orderBy(schema_identity_1.permissions.category, schema_identity_1.permissions.code);
 }
 async function assignPermissionToRole(roleId, permissionCode) {
     const [role] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, roleId));
-    if (!role)
-        throw new utils_1.NotFoundError("Rôle introuvable");
+    assertEmbassyRole(role);
     const [permission] = await connection_1.db.select().from(schema_identity_1.permissions).where((0, drizzle_orm_1.eq)(schema_identity_1.permissions.code, permissionCode));
-    if (!permission)
+    if (!permission || permission.scope !== SCOPE)
         throw new utils_1.NotFoundError("Permission introuvable");
     const [existing] = await connection_1.db
         .select()
@@ -88,8 +89,10 @@ async function assignPermissionToRole(roleId, permissionCode) {
     await connection_1.db.insert(schema_identity_1.rolePermissions).values({ roleId, permissionId: permission.id });
 }
 async function removePermissionFromRole(roleId, permissionCode) {
+    const [role] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, roleId));
+    assertEmbassyRole(role);
     const [permission] = await connection_1.db.select().from(schema_identity_1.permissions).where((0, drizzle_orm_1.eq)(schema_identity_1.permissions.code, permissionCode));
-    if (!permission)
+    if (!permission || permission.scope !== SCOPE)
         throw new utils_1.NotFoundError("Permission introuvable");
     await connection_1.db
         .delete(schema_identity_1.rolePermissions)
@@ -97,8 +100,7 @@ async function removePermissionFromRole(roleId, permissionCode) {
 }
 async function assignRoleToUser(targetUserId, roleId, assignedBy) {
     const [role] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, roleId));
-    if (!role)
-        throw new utils_1.NotFoundError("Rôle introuvable");
+    assertEmbassyRole(role);
     const [existing] = await connection_1.db
         .select()
         .from(schema_identity_1.userRoles)
@@ -123,6 +125,8 @@ async function removeRoleFromUser(targetUserId, roleId, callerUserId) {
     if (targetUserId === callerUserId) {
         throw new utils_1.ForbiddenError("Vous ne pouvez pas retirer votre propre rôle");
     }
+    const [roleRow] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, roleId));
+    assertEmbassyRole(roleRow);
     const [existing] = await connection_1.db
         .select()
         .from(schema_identity_1.userRoles)

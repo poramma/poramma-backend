@@ -120,7 +120,8 @@ async function login(req, res) {
         throw new utils_1.ValidationError("Données invalides", zodDetails(parsed.error));
     await enforceRateLimit(`login:${req.ip}`, LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW_SECONDS);
     const ua = req.headers["user-agent"];
-    const tokens = await authService.login(parsed.data.email, parsed.data.password, req.ip, typeof ua === "string" ? ua : null, parsed.data.rememberMe ?? false);
+    const clientApp = req.headers["x-client-app"] === "community" ? "community" : "embassy";
+    const tokens = await authService.login(parsed.data.email, parsed.data.password, req.ip, typeof ua === "string" ? ua : null, parsed.data.rememberMe ?? false, clientApp);
     res.json((0, dto_2.ok)(tokens));
 }
 async function refresh(req, res) {

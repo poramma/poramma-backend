@@ -55,6 +55,25 @@ export declare const supportTickets: import("drizzle-orm/pg-core").PgTableWithCo
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        target: import("drizzle-orm/pg-core").PgColumn<{
+            name: "target";
+            tableName: "support_tickets";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 10;
+        }>;
         category: import("drizzle-orm/pg-core").PgColumn<{
             name: "category";
             tableName: "support_tickets";

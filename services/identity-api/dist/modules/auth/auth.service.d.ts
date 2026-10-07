@@ -24,28 +24,28 @@ export declare function buildFullUser(userId: string): Promise<FullUser>;
 export declare function register(email: string, password: string, firstName: string, lastName: string): Promise<{
     profile: {
         id: string;
-        firstName: string | null;
-        lastName: string | null;
-        userType: string | null;
-        city: string | null;
         createdAt: Date | null;
         updatedAt: Date | null;
         userId: string;
         inue: string | null;
+        userType: string | null;
+        firstName: string | null;
+        lastName: string | null;
         bio: string | null;
         birthDate: string | null;
         nationality: string | null;
         address: string | null;
+        city: string | null;
         country: string | null;
         zipCode: string | null;
         gender: string | null;
     };
     id: string;
     email: string;
-    status: string | null;
     phone: string | null;
     emailVerified: boolean | null;
     phoneVerified: boolean | null;
+    status: string | null;
     passwordHash: string;
     mustChangePassword: boolean;
     createdAt: Date | null;
@@ -60,7 +60,7 @@ export declare function verifyOtp(email: string, otp: string, password: string, 
         email: string;
     };
 }>;
-export declare function login(email: string, password: string, ip?: string | null, ua?: string | null, rememberMe?: boolean): Promise<AuthResponse>;
+export declare function login(email: string, password: string, ip?: string | null, ua?: string | null, rememberMe?: boolean, clientApp?: "embassy" | "community"): Promise<AuthResponse>;
 export declare function refresh(refreshToken: string): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -85,6 +85,7 @@ export declare function listSystemRoles(): Promise<{
     description: string | null;
     level: number;
     isSystem: boolean | null;
+    scope: string;
 }[]>;
 export declare function getMyPermissions(userId: string): Promise<string[]>;
 export declare function switchRole(userId: string, sessionId: string, roleId: string): Promise<{

@@ -1,5 +1,6 @@
 import { db } from "../../db/connection";
 import { auditLogs } from "../../db/schema.audit";
+import { auditLogic } from "@poramma/ambassade-core";
 interface Actor {
     userId: string;
     roleName: string | null;
@@ -18,20 +19,7 @@ export declare function writeAudit(params: {
     sessionId?: string | null;
     tx?: Pick<typeof db, "insert">;
 }): Promise<void>;
-export interface AuditFilters {
-    actorUserId?: string;
-    actorRole?: string;
-    action?: string;
-    entityType?: string;
-    entityId?: string;
-    result?: string;
-    severity?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    search?: string;
-    page?: number;
-    limit?: number;
-}
+export type AuditFilters = auditLogic.AuditFilters;
 export declare function enrichLogs(rows: (typeof auditLogs.$inferSelect)[]): Promise<{
     id: string;
     at: Date;

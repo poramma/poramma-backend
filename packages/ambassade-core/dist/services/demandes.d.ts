@@ -21,8 +21,8 @@ export declare function createDemande(db: Db, data: CreateDemandeInput): Promise
     createdAt: Date | null;
     currency: string | null;
     subServiceId: string;
-    userId: string;
     status: string;
+    userId: string;
     submittedAt: Date | null;
     updatedAt: Date | null;
     assignedAgentId: string | null;
