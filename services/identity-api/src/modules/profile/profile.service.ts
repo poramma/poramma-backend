@@ -116,7 +116,7 @@ export async function updateMyPassword(userId: string, currentPassword: string, 
   const newHash = await bcrypt.hash(newPassword, 10);
   // Lève aussi mustChangePassword : un compte enrôlé sur place (mot de passe
   // par défaut) redevient un compte normal dès que le titulaire en choisit un.
-  await db.update(users).set({ passwordHash: newHash, mustChangePassword: false, updatedAt: new Date() }).where(eq(users.id, userId));
+  await db.update(users).set({ passwordHash: newHash, passwordSet: true, mustChangePassword: false, updatedAt: new Date() }).where(eq(users.id, userId));
 }
 
 /** POST /profile/signature — remplace le fichier existant s'il y en avait un (best-effort cleanup). */
