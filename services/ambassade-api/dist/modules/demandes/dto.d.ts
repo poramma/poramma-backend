@@ -39,8 +39,8 @@ export declare const listDemandesQueryDto: z.ZodObject<{
     dossierNumber?: string | undefined;
     priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | undefined;
     limit?: number | undefined;
-    isOverdue?: boolean | undefined;
     page?: number | undefined;
+    isOverdue?: boolean | undefined;
 }, {
     search?: string | undefined;
     subServiceId?: string | undefined;
@@ -49,8 +49,8 @@ export declare const listDemandesQueryDto: z.ZodObject<{
     dossierNumber?: string | undefined;
     priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | undefined;
     limit?: number | undefined;
-    isOverdue?: boolean | undefined;
     page?: number | undefined;
+    isOverdue?: boolean | undefined;
 }>;
 export declare const updateStatusDto: z.ZodObject<{
     status: z.ZodEnum<["DRAFT", "SUBMITTED", "IN_REVIEW", "ADDITIONAL_INFO_REQUIRED", "UNDER_VERIFICATION", "APPROVED", "REJECTED", "COMPLETED", "CANCELLED", "ARCHIVED"]>;

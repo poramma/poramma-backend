@@ -35,6 +35,7 @@ for f in services/ambassade-api/src/db/migrations/*.sql; do apply "$f"; done
 
 apply services/identity-api/src/db/seed.sql
 apply services/identity-api/src/db/seed-culture-reception.sql
+apply services/identity-api/src/db/seed-community.sql
 apply services/ambassade-api/src/db/seed.sql
 
 echo "-> remplacement du mot de passe admin@poramma.ml"
@@ -44,3 +45,4 @@ UPDATE identity.users SET password_hash = :'h', updated_at = now() WHERE email =
 SQL
 
 echo "Base initialisée. Connexion : admin@poramma.ml avec le mot de passe fourni."
+echo "Administration de la communauté : créez son premier administrateur avec infra/db/create-community-admin.sh."

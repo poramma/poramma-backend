@@ -86,6 +86,8 @@ export const roles = identity.table("roles", {
   description: text("description"),
   level: integer("level").notNull(),
   isSystem: boolean("is_system").default(true),
+  /** EMBASSY = personnel de l'ambassade ; COMMUNITY = équipe d'administration de la plateforme communautaire (jamais mélangés). */
+  scope: varchar("scope", { length: 12 }).notNull().default("EMBASSY"),
 });
 
 // --- PERMISSIONS (catalog) ---
@@ -99,6 +101,8 @@ export const permissions = identity.table("permissions", {
   action: varchar("action", { length: 50 }).notNull(),
   category: varchar("category", { length: 100 }),
   minRoleLevel: integer("min_role_level").notNull(),
+  /** Même valeurs que roles.scope : une permission COMMUNITY n'est jamais héritée par la hiérarchie ambassade (min_role_level = 0). */
+  scope: varchar("scope", { length: 12 }).notNull().default("EMBASSY"),
 });
 
 // --- ROLE PERMISSIONS (pivot) ---

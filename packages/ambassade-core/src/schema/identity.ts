@@ -65,6 +65,8 @@ export const identityAgents = identity.table("agents", {
 export const identityRoles = identity.table("roles", {
   id: uuid("id").primaryKey(),
   name: varchar("name", { length: 50 }).notNull(),
+  /** EMBASSY | COMMUNITY — voir identity-api (schema.identity.ts). */
+  scope: varchar("scope", { length: 12 }).notNull(),
 });
 
 export const identityUserRoles = identity.table("user_roles", {

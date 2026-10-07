@@ -34,3 +34,5 @@ export * as supportLogic from "./services/support";
 
 export * as cultureSchema from "./schema/culture";
 export * as cultureLogic from "./services/culture";
+
+export * as healthLogic from "./services/health";

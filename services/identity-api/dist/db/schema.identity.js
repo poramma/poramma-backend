@@ -68,6 +68,7 @@ exports.roles = exports.identity.table("roles", {
     description: (0, pg_core_1.text)("description"),
     level: (0, pg_core_1.integer)("level").notNull(),
     isSystem: (0, pg_core_1.boolean)("is_system").default(true),
+    scope: (0, pg_core_1.varchar)("scope", { length: 12 }).notNull().default("EMBASSY"),
 });
 exports.permissions = exports.identity.table("permissions", {
     id: (0, pg_core_1.uuid)("id").defaultRandom().primaryKey(),
@@ -78,6 +79,7 @@ exports.permissions = exports.identity.table("permissions", {
     action: (0, pg_core_1.varchar)("action", { length: 50 }).notNull(),
     category: (0, pg_core_1.varchar)("category", { length: 100 }),
     minRoleLevel: (0, pg_core_1.integer)("min_role_level").notNull(),
+    scope: (0, pg_core_1.varchar)("scope", { length: 12 }).notNull().default("EMBASSY"),
 });
 exports.rolePermissions = exports.identity.table("role_permissions", {
     roleId: (0, pg_core_1.uuid)("role_id")

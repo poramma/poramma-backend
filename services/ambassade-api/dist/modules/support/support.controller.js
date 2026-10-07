@@ -34,20 +34,21 @@ const updateDto = zod_1.z
 function zodDetails(error) {
     return error.flatten().fieldErrors;
 }
+const TARGET = "EMBASSY";
 const actorOf = (req) => ({ userId: req.userId, roleName: req.roleName ?? null });
 async function listTickets(req, res) {
     const parsed = listQueryDto.safeParse(req.query);
     if (!parsed.success)
         throw new utils_1.ValidationError("Filtres invalides", zodDetails(parsed.error));
-    const { data, total, page, limit, stats } = await ambassade_core_1.supportLogic.listTickets(connection_1.db, actorOf(req).userId, parsed.data);
+    const { data, total, page, limit, stats } = await ambassade_core_1.supportLogic.listTickets(connection_1.db, TARGET, actorOf(req).userId, parsed.data);
     const meta = { ...(0, dto_1.paginationMeta)(page, limit, total), stats };
     res.json((0, dto_1.ok)(data, meta));
 }
 async function listAssignees(_req, res) {
-    res.json((0, dto_1.ok)(await ambassade_core_1.supportLogic.listAssignees(connection_1.db)));
+    res.json((0, dto_1.ok)(await ambassade_core_1.supportLogic.listAssignees(connection_1.db, TARGET)));
 }
 async function getTicket(req, res) {
-    res.json((0, dto_1.ok)(await ambassade_core_1.supportLogic.getTicketForStaff(connection_1.db, req.params.id)));
+    res.json((0, dto_1.ok)(await ambassade_core_1.supportLogic.getTicketForStaff(connection_1.db, TARGET, req.params.id)));
 }
 async function addMessage(req, res) {
     const parsed = messageDto.safeParse(req.body);
@@ -55,7 +56,7 @@ async function addMessage(req, res) {
         throw new utils_1.ValidationError("Données invalides", zodDetails(parsed.error));
     const actor = actorOf(req);
     const internal = parsed.data.isInternal ?? false;
-    const ticket = await ambassade_core_1.supportLogic.addStaffMessage(connection_1.db, req.params.id, actor.userId, parsed.data.content, internal);
+    const ticket = await ambassade_core_1.supportLogic.addStaffMessage(connection_1.db, TARGET, req.params.id, actor.userId, parsed.data.content, internal);
     await (0, audit_service_1.writeAudit)({
         action: internal ? "NOTE" : "COMMENT",
         entityType: "TICKET_SUPPORT",
@@ -70,8 +71,8 @@ async function updateTicket(req, res) {
     if (!parsed.success)
         throw new utils_1.ValidationError("Données invalides", zodDetails(parsed.error));
     const actor = actorOf(req);
-    const before = await ambassade_core_1.supportLogic.getTicketForStaff(connection_1.db, req.params.id);
-    const ticket = await ambassade_core_1.supportLogic.updateTicket(connection_1.db, req.params.id, actor.userId, parsed.data);
+    const before = await ambassade_core_1.supportLogic.getTicketForStaff(connection_1.db, TARGET, req.params.id);
+    const ticket = await ambassade_core_1.supportLogic.updateTicket(connection_1.db, TARGET, req.params.id, actor.userId, parsed.data);
     await (0, audit_service_1.writeAudit)({
         action: parsed.data.assignedTo !== undefined && parsed.data.status === undefined ? "ASSIGN" : "UPDATE_STATUS",
         entityType: "TICKET_SUPPORT",

@@ -32,12 +32,30 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
 
     (req as any).userId = decoded.sub;
+    (req as any).roleName = decoded.roleName ?? null;
     (req as any).roleLevel = decoded.roleLevel ?? 999;
+    (req as any).permissions = decoded.permissions ?? [];
     (req as any).sessionId = decoded.sessionId;
     next();
   } catch (err) {
     next(err);
   }
+}
+
+/**
+ * Contrôle d'accès de l'espace d'administration communautaire (/admin/*) :
+ * seules les permissions "community:*" du jeton comptent. Elles ne sont
+ * attribuées qu'aux rôles COMMUNITY_ADMIN / COMMUNITY_SUPPORT (jamais à un rôle
+ * de l'ambassade, ADMIN compris — voir identity-api seed-community.sql).
+ */
+export function requirePermission(code: string) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const permissions: string[] = (req as any).permissions || [];
+    if (!permissions.includes(code)) {
+      return next(new ForbiddenError("Permission insuffisante"));
+    }
+    next();
+  };
 }
 
 /**

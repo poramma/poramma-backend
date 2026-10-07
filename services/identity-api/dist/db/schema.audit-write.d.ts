@@ -252,6 +252,25 @@ export declare const auditLogs: import("drizzle-orm/pg-core").PgTableWithColumns
         }, {}, {
             length: 20;
         }>;
+        domain: import("drizzle-orm/pg-core").PgColumn<{
+            name: "domain";
+            tableName: "audit_logs";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 12;
+        }>;
     };
     dialect: "pg";
 }>;

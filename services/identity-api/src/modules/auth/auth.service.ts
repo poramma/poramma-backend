@@ -334,7 +334,8 @@ export async function login(
   password: string,
   ip?: string | null,
   ua?: string | null,
-  rememberMe = false
+  rememberMe = false,
+  clientApp: "embassy" | "community" = "embassy"
 ): Promise<AuthResponse> {
   const [user] = await db.select().from(users).where(eq(users.email, email));
   if (!user) {
@@ -348,6 +349,8 @@ export async function login(
       details: { reason: "UNKNOWN_EMAIL" },
       ip,
       ua,
+      // Aucun compte à rattacher : on classe la tentative selon le site d'où elle vient.
+      domain: clientApp === "community" ? "COMMUNITY" : "EMBASSY",
     });
     throw new UnauthorizedError("Identifiants invalides");
   }
@@ -389,7 +392,8 @@ export async function login(
   // refresh token (which embeds this session's id) exists.
   const [session] = await db
     .insert(sessions)
-    .values({ userId: user.id, refreshTokenHash: "pending", ip: "0.0.0.0", userAgent: "unknown", rememberMe })
+    // IP et appareil réels : l'administration (sessions d'un membre) les affiche.
+    .values({ userId: user.id, refreshTokenHash: "pending", ip: ip ?? "0.0.0.0", userAgent: ua ?? "unknown", rememberMe })
     .returning();
 
   const { accessToken, refreshToken } = signTokens(user.id, user.email, session.id, rbac, rememberMe);

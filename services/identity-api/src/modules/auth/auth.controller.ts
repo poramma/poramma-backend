@@ -109,12 +109,16 @@ export async function login(req: Request, res: Response) {
   await enforceRateLimit(`login:${req.ip}`, LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW_SECONDS);
 
   const ua = req.headers["user-agent"];
+  // Les deux frontends envoient X-Client-App ; sert uniquement à classer dans le bon
+  // journal d'audit une tentative sur un email inconnu (voir auth.service login).
+  const clientApp = req.headers["x-client-app"] === "community" ? "community" : "embassy";
   const tokens = await authService.login(
     parsed.data.email,
     parsed.data.password,
     req.ip,
     typeof ua === "string" ? ua : null,
-    parsed.data.rememberMe ?? false
+    parsed.data.rememberMe ?? false,
+    clientApp
   );
   res.json(ok(tokens));
 }

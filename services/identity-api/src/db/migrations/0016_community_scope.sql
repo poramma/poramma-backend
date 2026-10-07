@@ -1,0 +1,2 @@
+ALTER TABLE "identity"."permissions" ADD COLUMN "scope" varchar(12) DEFAULT 'EMBASSY' NOT NULL;--> statement-breakpoint
+ALTER TABLE "identity"."roles" ADD COLUMN "scope" varchar(12) DEFAULT 'EMBASSY' NOT NULL;

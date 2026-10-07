@@ -84,7 +84,7 @@ async function createAgent(data, createdBy) {
     if (existingMatricule)
         throw new utils_1.ConflictError("Matricule déjà utilisé");
     const [role] = await connection_1.db.select().from(schema_identity_1.roles).where((0, drizzle_orm_1.eq)(schema_identity_1.roles.id, data.roleId));
-    if (!role)
+    if (!role || role.scope !== "EMBASSY")
         throw new utils_1.NotFoundError("Rôle introuvable");
     const tempPassword = data.password ?? generateTempPassword();
     const passwordHash = await bcryptjs_1.default.hash(tempPassword, 10);

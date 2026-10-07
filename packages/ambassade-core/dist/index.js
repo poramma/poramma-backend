@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cultureLogic = exports.cultureSchema = exports.supportLogic = exports.supportSchema = exports.notificationsLogic = exports.notificationsSchema = exports.campagnesLogic = exports.campagnesSchema = exports.rendezvousLogic = exports.rendezvousSchema = exports.documentsLogic = exports.documentsSchema = exports.registrationLogic = exports.demandesLogic = exports.demandesSchema = exports.identityLogic = exports.identitySchema = exports.etudiantsLogic = exports.etudiantsSchema = exports.auditLogic = exports.auditSchema = exports.servicesLogic = exports.servicesSchema = void 0;
+exports.healthLogic = exports.cultureLogic = exports.cultureSchema = exports.supportLogic = exports.supportSchema = exports.notificationsLogic = exports.notificationsSchema = exports.campagnesLogic = exports.campagnesSchema = exports.rendezvousLogic = exports.rendezvousSchema = exports.documentsLogic = exports.documentsSchema = exports.registrationLogic = exports.demandesLogic = exports.demandesSchema = exports.identityLogic = exports.identitySchema = exports.etudiantsLogic = exports.etudiantsSchema = exports.auditLogic = exports.auditSchema = exports.servicesLogic = exports.servicesSchema = void 0;
 exports.servicesSchema = __importStar(require("./schema/services"));
 exports.servicesLogic = __importStar(require("./services/services"));
 exports.auditSchema = __importStar(require("./schema/audit"));
@@ -57,4 +57,5 @@ exports.supportSchema = __importStar(require("./schema/support"));
 exports.supportLogic = __importStar(require("./services/support"));
 exports.cultureSchema = __importStar(require("./schema/culture"));
 exports.cultureLogic = __importStar(require("./services/culture"));
+exports.healthLogic = __importStar(require("./services/health"));
 //# sourceMappingURL=index.js.map

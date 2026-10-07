@@ -13,6 +13,8 @@ export const supportTickets = ambassade.table(
     /** Numéro de suivi lisible (SUP-2026-3C1FE8), communiqué à l'usager. */
     reference: varchar("reference", { length: 30 }).notNull().unique(),
     userId: uuid("user_id").notNull(),
+    /** À qui le ticket est adressé : EMBASSY (dossiers, rendez-vous…) ou COMMUNITY (support de la plateforme communautaire). Chaque équipe ne voit que les siens. */
+    target: varchar("target", { length: 10 }).notNull().default("EMBASSY"),
     category: varchar("category", { length: 20 }).notNull(), // ACCOUNT | DEMANDE | RENDEZ_VOUS | REGISTRATION | TECHNICAL | OTHER
     subject: varchar("subject", { length: 150 }).notNull(),
     /** N° de dossier / de ticket de rendez-vous cité par l'usager (texte libre). */
@@ -29,6 +31,7 @@ export const supportTickets = ambassade.table(
     updatedAt: timestamp("updated_at").defaultNow(),
   },
   (t) => [
+    index("support_tickets_target_status_idx").on(t.target, t.status, t.lastMessageAt),
     index("support_tickets_status_idx").on(t.status, t.lastMessageAt),
     index("support_tickets_user_idx").on(t.userId),
     index("support_tickets_assigned_idx").on(t.assignedTo),

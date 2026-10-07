@@ -113,6 +113,13 @@
       "when": 1790800584302,
       "tag": "0015_friendly_viper",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791390210654,
+      "tag": "0016_community_scope",
+      "breakpoints": true
     }
   ]
 }
