@@ -14,11 +14,20 @@ const DEFAULT_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 const ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
 const MAX_TOKEN_AGE_SECONDS = 10 * 60;
 const MIN_REFETCH_MS = 60_000;
+const CLIENT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*\.apps\.googleusercontent\.com$/;
+let warnedInvalid = false;
 function googleClientIds() {
-    return (process.env.GOOGLE_CLIENT_ID ?? "")
+    const all = (process.env.GOOGLE_CLIENT_ID ?? "")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
+    const valid = all.filter((id) => CLIENT_ID_RE.test(id) && !id.startsWith("GOCSPX-"));
+    if (valid.length !== all.length && !warnedInvalid) {
+        warnedInvalid = true;
+        console.error("[auth] GOOGLE_CLIENT_ID invalide : attendu « <chiffres>-<texte>.apps.googleusercontent.com » (l'ID client de la console Google, " +
+            "pas le secret « GOCSPX-… » et sans préfixe). La connexion Google reste désactivée tant que la valeur n'est pas corrigée.");
+    }
+    return valid;
 }
 function isGoogleConfigured() {
     return googleClientIds().length > 0;
