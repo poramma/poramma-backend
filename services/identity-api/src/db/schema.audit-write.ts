@@ -22,4 +22,6 @@ export const auditLogs = audit.table("audit_logs", {
   ua: text("ua"),
   sessionId: text("session_id"),
   severity: varchar("severity", { length: 20 }).notNull().default("INFO"),
+  /** EMBASSY | COMMUNITY — voir ambassade-core (schema/audit.ts) ; fixé à l'écriture par resolveAuditDomain. */
+  domain: varchar("domain", { length: 12 }).notNull().default("EMBASSY"),
 });

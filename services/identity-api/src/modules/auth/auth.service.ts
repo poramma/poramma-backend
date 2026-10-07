@@ -334,7 +334,8 @@ export async function login(
   password: string,
   ip?: string | null,
   ua?: string | null,
-  rememberMe = false
+  rememberMe = false,
+  clientApp: "embassy" | "community" = "embassy"
 ): Promise<AuthResponse> {
   const [user] = await db.select().from(users).where(eq(users.email, email));
   if (!user) {
@@ -348,6 +349,8 @@ export async function login(
       details: { reason: "UNKNOWN_EMAIL" },
       ip,
       ua,
+      // Aucun compte à rattacher : on classe la tentative selon le site d'où elle vient.
+      domain: clientApp === "community" ? "COMMUNITY" : "EMBASSY",
     });
     throw new UnauthorizedError("Identifiants invalides");
   }
