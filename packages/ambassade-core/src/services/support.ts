@@ -9,7 +9,16 @@ import { createNotification } from "./notifications";
 
 // ── Vocabulaire ──────────────────────────────────────────────────────────
 
-export const TICKET_CATEGORIES = ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "OTHER"] as const;
+export const TICKET_TARGETS = ["EMBASSY", "COMMUNITY"] as const;
+export type TicketTarget = (typeof TICKET_TARGETS)[number];
+
+export const TICKET_CATEGORIES = ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "REPORT", "OTHER"] as const;
+
+/** Catégories proposées selon le destinataire : l'ambassade traite les dossiers, la communauté le compte, la technique et les signalements. */
+export const CATEGORIES_BY_TARGET: Record<TicketTarget, readonly string[]> = {
+  EMBASSY: ["ACCOUNT", "DEMANDE", "RENDEZ_VOUS", "REGISTRATION", "TECHNICAL", "OTHER"],
+  COMMUNITY: ["ACCOUNT", "TECHNICAL", "REPORT", "OTHER"],
+};
 export const TICKET_STATUSES = ["OPEN", "IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"] as const;
 export const TICKET_PRIORITIES = ["LOW", "NORMAL", "HIGH", "URGENT"] as const;
 
@@ -21,6 +30,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   RENDEZ_VOUS: "Un rendez-vous",
   REGISTRATION: "Enregistrement / INUE",
   TECHNICAL: "Problème technique",
+  REPORT: "Signalement (contenu ou comportement)",
   OTHER: "Autre question",
 };
 
@@ -34,8 +44,14 @@ const STATUS_LABEL: Record<string, string> = {
 
 const PRIORITY_LABEL: Record<string, string> = { LOW: "Basse", NORMAL: "Normale", HIGH: "Haute", URGENT: "Urgente" };
 
-/** Nom sous lequel l'ambassade signe ses réponses : jamais l'identité de l'agent. */
-const EMBASSY_LABEL = "Ambassade du Mali";
+/** Nom sous lequel chaque équipe signe ses réponses : jamais l'identité de l'agent. */
+const TEAM_LABEL: Record<TicketTarget, string> = { EMBASSY: "Ambassade du Mali", COMMUNITY: "Support Poramma Communauté" };
+
+/** Rôles qui traitent les tickets de chaque destinataire. */
+const STAFF_ROLES: Record<TicketTarget, string[]> = { EMBASSY: ["ADMIN"], COMMUNITY: ["COMMUNITY_ADMIN", "COMMUNITY_SUPPORT"] };
+
+/** Où l'équipe retrouve le ticket (back-office ambassade ou espace d'administration communauté). */
+const staffUrl = (target: TicketTarget, id: string) => (target === "COMMUNITY" ? `/admin/support/${id}` : `/support-tickets/${id}`);
 
 type Ticket = typeof supportTickets.$inferSelect;
 type TicketMessage = typeof supportTicketMessages.$inferSelect;
@@ -57,19 +73,19 @@ const excerpt = (text: string, max = 220) => (text.length > max ? `${text.slice(
 
 // ── Personnel ────────────────────────────────────────────────────────────
 
-/** Utilisateurs ayant le rôle ADMIN (actif) — ceux qui traitent les tickets. */
-export async function listAdminIds(db: Db): Promise<string[]> {
+/** Utilisateurs ayant un rôle actif de l'équipe qui traite ce destinataire — ceux qui traitent les tickets. */
+export async function listAdminIds(db: Db, target: TicketTarget): Promise<string[]> {
   const rows = await db
     .selectDistinct({ userId: identityUserRoles.userId })
     .from(identityUserRoles)
     .innerJoin(identityRoles, eq(identityRoles.id, identityUserRoles.roleId))
-    .where(and(eq(identityRoles.name, "ADMIN"), eq(identityUserRoles.isActive, true)));
+    .where(and(inArray(identityRoles.name, STAFF_ROLES[target]), eq(identityUserRoles.isActive, true)));
   return rows.map((r) => r.userId);
 }
 
-/** Administrateurs assignables, avec leur nom. */
-export async function listAssignees(db: Db) {
-  const ids = await listAdminIds(db);
+/** Membres de l'équipe assignables, avec leur nom. */
+export async function listAssignees(db: Db, target: TicketTarget) {
+  const ids = await listAdminIds(db, target);
   const users = await getUsersByIds(db, ids);
   return ids
     .map((id) => {
@@ -79,9 +95,9 @@ export async function listAssignees(db: Db) {
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 }
 
-/** Qui prévenir côté ambassade : l'administrateur assigné s'il y en a un, sinon tous. */
+/** Qui prévenir côté équipe : le membre assigné s'il y en a un, sinon toute l'équipe du destinataire. */
 async function staffRecipients(db: Db, ticket: Ticket, exceptUserId?: string): Promise<string[]> {
-  const ids = ticket.assignedTo ? [ticket.assignedTo] : await listAdminIds(db);
+  const ids = ticket.assignedTo ? [ticket.assignedTo] : await listAdminIds(db, ticket.target as TicketTarget);
   return ids.filter((id) => id !== exceptUserId);
 }
 
@@ -93,9 +109,15 @@ async function notifyStaff(db: Db, ticket: Ticket, params: { title: string; body
       title: params.title,
       body: params.body,
       payload: { supportTicketId: ticket.id, reference: ticket.reference },
-      actionUrl: `/support-tickets/${ticket.id}`,
-      // Pas de bouton dans l'email : le lien pointerait vers le portail citoyen, pas vers le backoffice.
-      email: params.email === false ? undefined : { subject: `[Support ${ticket.reference}] ${params.title}` },
+      actionUrl: staffUrl(ticket.target as TicketTarget, ticket.id),
+      // Ambassade : pas de bouton dans l'email (le lien pointerait vers le portail citoyen, pas vers le
+      // backoffice). Communauté : l'équipe travaille dans le portail lui-même, le lien est le bon.
+      email:
+        params.email === false
+          ? undefined
+          : ticket.target === "COMMUNITY"
+            ? { subject: `[Support ${ticket.reference}] ${params.title}`, actionLabel: "Ouvrir le ticket" }
+            : { subject: `[Support ${ticket.reference}] ${params.title}` },
     });
   }
 }
@@ -136,6 +158,7 @@ async function getTicketRow(db: Db, id: string): Promise<Ticket> {
 function publicTicket(t: Ticket) {
   return {
     id: t.id,
+    target: t.target as TicketTarget,
     reference: t.reference,
     subject: t.subject,
     category: t.category,
@@ -148,11 +171,11 @@ function publicTicket(t: Ticket) {
   };
 }
 
-function publicMessage(m: TicketMessage, requesterName: string) {
+function publicMessage(m: TicketMessage, requesterName: string, teamLabel: string) {
   return {
     id: m.id,
     authorType: m.authorType as "USER" | "STAFF" | "SYSTEM",
-    authorName: m.authorType === "USER" ? requesterName : m.authorType === "STAFF" ? EMBASSY_LABEL : null,
+    authorName: m.authorType === "USER" ? requesterName : m.authorType === "STAFF" ? teamLabel : null,
     content: m.content,
     createdAt: m.createdAt,
   };
@@ -166,8 +189,11 @@ async function requesterName(db: Db, userId: string): Promise<string> {
 export async function createTicket(
   db: Db,
   userId: string,
-  data: { category: string; subject: string; message: string; linkedReference?: string | null }
+  data: { target: TicketTarget; category: string; subject: string; message: string; linkedReference?: string | null }
 ) {
+  if (!(CATEGORIES_BY_TARGET[data.target] ?? []).includes(data.category)) {
+    throw new ValidationError("Catégorie invalide pour ce destinataire", { category: ["invalid for target"] });
+  }
   const reference = await newReference(db);
   const id = newId("tkt");
   const user = await getUser(db, userId);
@@ -175,7 +201,7 @@ export async function createTicket(
 
   const [ticket] = await db
     .insert(supportTickets)
-    .values({ id, reference, userId, category: data.category, subject: data.subject, linkedReference: data.linkedReference ?? null })
+    .values({ id, reference, userId, target: data.target, category: data.category, subject: data.subject, linkedReference: data.linkedReference ?? null })
     .returning();
   await db.insert(supportTicketMessages).values({
     id: newId("tmsg"),
@@ -193,7 +219,7 @@ export async function createTicket(
   });
   await notifyRequester(db, ticket, {
     title: "Votre message a bien été transmis",
-    body: `Nous avons reçu votre message « ${data.subject} ». Numéro de suivi : ${reference}. Vous serez prévenu(e) dès qu'un agent vous répond.`,
+    body: `Nous avons reçu votre message « ${data.subject} ». Numéro de suivi : ${reference}. Vous serez prévenu(e) dès que ${data.target === "COMMUNITY" ? "le support de la communauté" : "l'ambassade"} vous répond.`,
     actionLabel: "Suivre mon ticket",
   });
   return publicTicket(ticket);
@@ -215,7 +241,8 @@ export async function getTicketForUser(db: Db, userId: string, id: string) {
       .orderBy(supportTicketMessages.createdAt),
     requesterName(db, userId),
   ]);
-  return { ...publicTicket(ticket), messages: messages.map((m) => publicMessage(m, name)) };
+  const label = TEAM_LABEL[ticket.target as TicketTarget];
+  return { ...publicTicket(ticket), messages: messages.map((m) => publicMessage(m, name, label)) };
 }
 
 export async function addUserMessage(db: Db, userId: string, id: string, content: string) {
@@ -242,7 +269,7 @@ export async function addUserMessage(db: Db, userId: string, id: string, content
     title: `${reopened ? "Ticket rouvert" : "Nouvelle réponse"} — ${ticket.reference}`,
     body: `${name} : ${excerpt(content)}`,
   });
-  return publicMessage(message, name);
+  return publicMessage(message, name, TEAM_LABEL[ticket.target as TicketTarget]);
 }
 
 /** L'usager estime son problème réglé : le ticket passe en « Résolu » (l'ambassade le clôt ensuite, ou l'usager peut le rouvrir en répondant). */
@@ -273,6 +300,7 @@ async function enrichStaff(db: Db, rows: Ticket[]) {
       id: t.id,
       reference: t.reference,
       subject: t.subject,
+      target: t.target as TicketTarget,
       category: t.category,
       linkedReference: t.linkedReference,
       status: t.status,
@@ -299,8 +327,9 @@ export interface TicketFilters {
   limit?: number;
 }
 
-export async function listTickets(db: Db, actorId: string, filters: TicketFilters) {
-  const conditions: SQL[] = [];
+export async function listTickets(db: Db, target: TicketTarget, actorId: string, filters: TicketFilters) {
+  const forTarget = eq(supportTickets.target, target);
+  const conditions: SQL[] = [forTarget];
   if (filters.status === "ACTIVE") conditions.push(inArray(supportTickets.status, ACTIVE_STATUSES));
   else if (filters.status) conditions.push(eq(supportTickets.status, filters.status));
   if (filters.category) conditions.push(eq(supportTickets.category, filters.category));
@@ -335,15 +364,15 @@ export async function listTickets(db: Db, actorId: string, filters: TicketFilter
       .limit(limit)
       .offset((page - 1) * limit),
     db.select({ total: sql<number>`count(*)::int` }).from(supportTickets).where(where),
-    db.select({ status: supportTickets.status, n: sql<number>`count(*)::int` }).from(supportTickets).groupBy(supportTickets.status),
+    db.select({ status: supportTickets.status, n: sql<number>`count(*)::int` }).from(supportTickets).where(forTarget).groupBy(supportTickets.status),
     db
       .select({ unassigned: sql<number>`count(*)::int` })
       .from(supportTickets)
-      .where(and(isNull(supportTickets.assignedTo), inArray(supportTickets.status, ACTIVE_STATUSES))),
+      .where(and(forTarget, isNull(supportTickets.assignedTo), inArray(supportTickets.status, ACTIVE_STATUSES))),
     db
       .select({ mine: sql<number>`count(*)::int` })
       .from(supportTickets)
-      .where(and(eq(supportTickets.assignedTo, actorId), inArray(supportTickets.status, ACTIVE_STATUSES))),
+      .where(and(forTarget, eq(supportTickets.assignedTo, actorId), inArray(supportTickets.status, ACTIVE_STATUSES))),
   ]);
 
   const byStatus = Object.fromEntries(statusCounts.map((c) => [c.status, c.n])) as Record<string, number>;
@@ -364,8 +393,15 @@ export async function listTickets(db: Db, actorId: string, filters: TicketFilter
   };
 }
 
-export async function getTicketForStaff(db: Db, id: string) {
+/** Charge un ticket ET vérifie qu'il est adressé à cette équipe : un ticket de l'autre équipe est « introuvable ». */
+async function getTicketRowFor(db: Db, target: TicketTarget, id: string): Promise<Ticket> {
   const ticket = await getTicketRow(db, id);
+  if (ticket.target !== target) throw new NotFoundError("Ticket introuvable");
+  return ticket;
+}
+
+export async function getTicketForStaff(db: Db, target: TicketTarget, id: string) {
+  const ticket = await getTicketRowFor(db, target, id);
   const [[enriched], messages] = await Promise.all([
     enrichStaff(db, [ticket]),
     db.select().from(supportTicketMessages).where(eq(supportTicketMessages.ticketId, id)).orderBy(supportTicketMessages.createdAt),
@@ -384,8 +420,8 @@ export async function getTicketForStaff(db: Db, id: string) {
 }
 
 /** Réponse à l'usager (visible de lui) ou note interne (réservée aux administrateurs). */
-export async function addStaffMessage(db: Db, id: string, actorId: string, content: string, isInternal: boolean) {
-  const ticket = await getTicketRow(db, id);
+export async function addStaffMessage(db: Db, target: TicketTarget, id: string, actorId: string, content: string, isInternal: boolean) {
+  const ticket = await getTicketRowFor(db, target, id);
   if (ticket.status === "CLOSED" && !isInternal) throw new ConflictError("Ce ticket est clôturé : rouvrez-le avant de répondre à l'usager.");
 
   const actorName = await getActorName(db, actorId);
@@ -393,7 +429,7 @@ export async function addStaffMessage(db: Db, id: string, actorId: string, conte
 
   if (isInternal) {
     await db.update(supportTickets).set({ updatedAt: new Date() }).where(eq(supportTickets.id, id));
-    return getTicketForStaff(db, id);
+    return getTicketForStaff(db, target, id);
   }
 
   const now = new Date();
@@ -412,19 +448,20 @@ export async function addStaffMessage(db: Db, id: string, actorId: string, conte
     .returning();
   await notifyRequester(db, updated, {
     title: `Réponse à votre ticket ${ticket.reference}`,
-    body: `L'ambassade a répondu à « ${ticket.subject} » :\n\n${excerpt(content)}`,
+    body: `${target === "COMMUNITY" ? "Le support de la communauté" : "L'ambassade"} a répondu à « ${ticket.subject} » :\n\n${excerpt(content)}`,
     actionLabel: "Voir la réponse",
   });
-  return getTicketForStaff(db, id);
+  return getTicketForStaff(db, target, id);
 }
 
 export async function updateTicket(
   db: Db,
+  target: TicketTarget,
   id: string,
   actorId: string,
   patch: { status?: string; priority?: string; assignedTo?: string | null }
 ) {
-  const ticket = await getTicketRow(db, id);
+  const ticket = await getTicketRowFor(db, target, id);
   if (ticket.status === "CLOSED") throw new ConflictError("Ce ticket est clôturé : il ne peut plus être modifié.");
   if (patch.status && !(TICKET_STATUSES as readonly string[]).includes(patch.status)) throw new ValidationError("Statut invalide", { status: ["invalid"] });
   if (patch.priority && !(TICKET_PRIORITIES as readonly string[]).includes(patch.priority)) throw new ValidationError("Priorité invalide", { priority: ["invalid"] });
@@ -440,7 +477,7 @@ export async function updateTicket(
   let nextAssignee: string | null | undefined = patch.assignedTo;
   if (patch.status === "IN_PROGRESS" && patch.assignedTo === undefined && !ticket.assignedTo) nextAssignee = actorId; // prise en charge
   if (nextAssignee !== undefined && nextAssignee !== ticket.assignedTo) {
-    if (nextAssignee && !(await listAdminIds(db)).includes(nextAssignee)) throw new ValidationError("Cet utilisateur ne peut pas traiter les tickets", { assignedTo: ["not an admin"] });
+    if (nextAssignee && !(await listAdminIds(db, target)).includes(nextAssignee)) throw new ValidationError("Cet utilisateur ne peut pas traiter les tickets", { assignedTo: ["not an admin"] });
     set.assignedTo = nextAssignee;
     events.push({ text: nextAssignee ? `Assigné à ${await getActorName(db, nextAssignee)}` : "Assignation retirée", internal: true });
   }
@@ -463,7 +500,7 @@ export async function updateTicket(
     notifyStatus = patch.status;
   }
 
-  if (Object.keys(set).length === 1) return getTicketForStaff(db, id); // rien à changer
+  if (Object.keys(set).length === 1) return getTicketForStaff(db, target, id); // rien à changer
 
   const [updated] = await db.update(supportTickets).set(set).where(eq(supportTickets.id, id)).returning();
   for (const e of events) await addEvent(db, id, e.text, e.internal, actor);
@@ -479,11 +516,11 @@ export async function updateTicket(
     });
   }
   if (notifyStatus === "IN_PROGRESS") {
-    await notifyRequester(db, updated, { title: `Votre ticket ${ticket.reference} est pris en charge`, body: `Un agent de l'ambassade traite « ${ticket.subject} ».`, actionLabel: "Suivre mon ticket" });
+    await notifyRequester(db, updated, { title: `Votre ticket ${ticket.reference} est pris en charge`, body: `${target === "COMMUNITY" ? "Le support de la communauté" : "Un agent de l'ambassade"} traite « ${ticket.subject} ».`, actionLabel: "Suivre mon ticket" });
   } else if (notifyStatus === "RESOLVED") {
     await notifyRequester(db, updated, { title: `Ticket ${ticket.reference} résolu`, body: `Votre demande « ${ticket.subject} » a été marquée comme résolue. Si le problème persiste, répondez simplement dans le ticket.`, actionLabel: "Voir mon ticket" });
   } else if (notifyStatus === "CLOSED") {
     await notifyRequester(db, updated, { title: `Ticket ${ticket.reference} clôturé`, body: `Votre demande « ${ticket.subject} » est clôturée. Pour toute nouvelle question, ouvrez un nouveau ticket.`, actionLabel: "Voir mon ticket" });
   }
-  return getTicketForStaff(db, id);
+  return getTicketForStaff(db, target, id);
 }

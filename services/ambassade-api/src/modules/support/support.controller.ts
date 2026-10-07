@@ -33,23 +33,26 @@ function zodDetails(error: any): Record<string, string[]> {
   return error.flatten().fieldErrors as Record<string, string[]>;
 }
 
+/** Ce back-office ne traite que les tickets adressés à l'ambassade ; ceux du support communautaire sont « introuvables » ici. */
+const TARGET = "EMBASSY" as const;
+
 const actorOf = (req: Request) => ({ userId: (req as any).userId as string, roleName: ((req as any).roleName as string | null) ?? null });
 
 export async function listTickets(req: Request, res: Response) {
   const parsed = listQueryDto.safeParse(req.query);
   if (!parsed.success) throw new ValidationError("Filtres invalides", zodDetails(parsed.error));
-  const { data, total, page, limit, stats } = await supportLogic.listTickets(db, actorOf(req).userId, parsed.data);
+  const { data, total, page, limit, stats } = await supportLogic.listTickets(db, TARGET, actorOf(req).userId, parsed.data);
   // `stats` = compteurs par statut, pour les pastilles de la file (en plus de la pagination).
   const meta = { ...paginationMeta(page, limit, total), stats };
   res.json(ok(data, meta));
 }
 
 export async function listAssignees(_req: Request, res: Response) {
-  res.json(ok(await supportLogic.listAssignees(db)));
+  res.json(ok(await supportLogic.listAssignees(db, TARGET)));
 }
 
 export async function getTicket(req: Request, res: Response) {
-  res.json(ok(await supportLogic.getTicketForStaff(db, req.params.id)));
+  res.json(ok(await supportLogic.getTicketForStaff(db, TARGET, req.params.id)));
 }
 
 export async function addMessage(req: Request, res: Response) {
@@ -57,7 +60,7 @@ export async function addMessage(req: Request, res: Response) {
   if (!parsed.success) throw new ValidationError("Données invalides", zodDetails(parsed.error));
   const actor = actorOf(req);
   const internal = parsed.data.isInternal ?? false;
-  const ticket = await supportLogic.addStaffMessage(db, req.params.id, actor.userId, parsed.data.content, internal);
+  const ticket = await supportLogic.addStaffMessage(db, TARGET, req.params.id, actor.userId, parsed.data.content, internal);
   await writeAudit({
     action: internal ? "NOTE" : "COMMENT",
     entityType: "TICKET_SUPPORT",
@@ -72,8 +75,8 @@ export async function updateTicket(req: Request, res: Response) {
   const parsed = updateDto.safeParse(req.body);
   if (!parsed.success) throw new ValidationError("Données invalides", zodDetails(parsed.error));
   const actor = actorOf(req);
-  const before = await supportLogic.getTicketForStaff(db, req.params.id);
-  const ticket = await supportLogic.updateTicket(db, req.params.id, actor.userId, parsed.data);
+  const before = await supportLogic.getTicketForStaff(db, TARGET, req.params.id);
+  const ticket = await supportLogic.updateTicket(db, TARGET, req.params.id, actor.userId, parsed.data);
   await writeAudit({
     action: parsed.data.assignedTo !== undefined && parsed.data.status === undefined ? "ASSIGN" : "UPDATE_STATUS",
     entityType: "TICKET_SUPPORT",
