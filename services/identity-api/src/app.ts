@@ -7,6 +7,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import usersRoutes from "./modules/users/users.routes";
 import rolesRoutes from "./modules/roles/roles.routes";
 import agentsRoutes from "./modules/agents/agents.routes";
+import communityAdminRoutes from "./modules/community-admin/community-admin.routes";
 import profileRoutes from "./modules/profile/profile.routes";
 
 const app: Express = express();
@@ -47,6 +48,8 @@ app.use("/users", usersRoutes);
 // root to match those flat paths exactly.
 app.use("/", rolesRoutes);
 app.use("/agents", agentsRoutes);
+// Écritures de l'administration de la plateforme communautaire (permissions community:*).
+app.use("/community-admin", communityAdminRoutes);
 app.use("/profile", profileRoutes);
 
 // Gestionnaire d’erreurs centralisé — doit rester le dernier middleware.

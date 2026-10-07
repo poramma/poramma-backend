@@ -117,7 +117,8 @@ export async function createAgent(data: CreateAgentInput, createdBy: string) {
   if (existingMatricule) throw new ConflictError("Matricule déjà utilisé");
 
   const [role] = await db.select().from(roles).where(eq(roles.id, data.roleId));
-  if (!role) throw new NotFoundError("Rôle introuvable");
+  // Un compte agent est toujours un compte ambassade : jamais un rôle de la plateforme communautaire.
+  if (!role || role.scope !== "EMBASSY") throw new NotFoundError("Rôle introuvable");
 
   const tempPassword = data.password ?? generateTempPassword();
   const passwordHash = await bcrypt.hash(tempPassword, 10);

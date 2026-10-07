@@ -21,8 +21,20 @@ async function permissionsForRole(roleId: string) {
   return rows;
 }
 
+/**
+ * Les rôles/permissions se partagent la même table pour l'ambassade et pour la
+ * plateforme communautaire, mais ne se voient ni ne se modifient jamais entre
+ * eux : tout ce module (appelé par le back-office ambassade) est limité à la
+ * portée EMBASSY. L'équipe communautaire est gérée par modules/community-admin.
+ */
+const SCOPE = "EMBASSY";
+
+function assertEmbassyRole(role: { scope: string } | undefined): asserts role is { scope: string } {
+  if (!role || role.scope !== SCOPE) throw new NotFoundError("Rôle introuvable");
+}
+
 export async function listRoles() {
-  const allRoles = await db.select().from(roles).orderBy(roles.level);
+  const allRoles = await db.select().from(roles).where(eq(roles.scope, SCOPE)).orderBy(roles.level);
   return Promise.all(
     allRoles.map(async (r) => ({ ...r, permissions: await permissionsForRole(r.id) }))
   );
@@ -30,21 +42,21 @@ export async function listRoles() {
 
 export async function getRole(id: string) {
   const [role] = await db.select().from(roles).where(eq(roles.id, id));
-  if (!role) throw new NotFoundError("Rôle introuvable");
+  assertEmbassyRole(role);
   return { ...role, permissions: await permissionsForRole(id) };
 }
 
 export async function createRole(data: { name: string; description: string; level: number; isSystem?: boolean }) {
   const [role] = await db
     .insert(roles)
-    .values({ name: data.name, description: data.description, level: data.level, isSystem: data.isSystem ?? false })
+    .values({ name: data.name, description: data.description, level: data.level, isSystem: data.isSystem ?? false, scope: SCOPE })
     .returning();
   return { ...role, permissions: [] };
 }
 
 export async function updateRole(id: string, data: Partial<{ name: string; description: string; level: number }>) {
   const [existing] = await db.select().from(roles).where(eq(roles.id, id));
-  if (!existing) throw new NotFoundError("Rôle introuvable");
+  assertEmbassyRole(existing);
   if (existing.isSystem) throw new ForbiddenError("Les rôles système ne peuvent pas être modifiés");
 
   const [updated] = await db
@@ -57,22 +69,22 @@ export async function updateRole(id: string, data: Partial<{ name: string; descr
 
 export async function deleteRole(id: string) {
   const [existing] = await db.select().from(roles).where(eq(roles.id, id));
-  if (!existing) throw new NotFoundError("Rôle introuvable");
+  assertEmbassyRole(existing);
   if (existing.isSystem) throw new ForbiddenError("Les rôles système ne peuvent pas être supprimés");
 
   await db.delete(roles).where(eq(roles.id, id));
 }
 
 export async function listPermissions() {
-  return db.select().from(permissions).orderBy(permissions.category, permissions.code);
+  return db.select().from(permissions).where(eq(permissions.scope, SCOPE)).orderBy(permissions.category, permissions.code);
 }
 
 export async function assignPermissionToRole(roleId: string, permissionCode: string) {
   const [role] = await db.select().from(roles).where(eq(roles.id, roleId));
-  if (!role) throw new NotFoundError("Rôle introuvable");
+  assertEmbassyRole(role);
 
   const [permission] = await db.select().from(permissions).where(eq(permissions.code, permissionCode));
-  if (!permission) throw new NotFoundError("Permission introuvable");
+  if (!permission || permission.scope !== SCOPE) throw new NotFoundError("Permission introuvable");
 
   const [existing] = await db
     .select()
@@ -84,8 +96,10 @@ export async function assignPermissionToRole(roleId: string, permissionCode: str
 }
 
 export async function removePermissionFromRole(roleId: string, permissionCode: string) {
+  const [role] = await db.select().from(roles).where(eq(roles.id, roleId));
+  assertEmbassyRole(role);
   const [permission] = await db.select().from(permissions).where(eq(permissions.code, permissionCode));
-  if (!permission) throw new NotFoundError("Permission introuvable");
+  if (!permission || permission.scope !== SCOPE) throw new NotFoundError("Permission introuvable");
 
   await db
     .delete(rolePermissions)
@@ -94,7 +108,7 @@ export async function removePermissionFromRole(roleId: string, permissionCode: s
 
 export async function assignRoleToUser(targetUserId: string, roleId: string, assignedBy: string) {
   const [role] = await db.select().from(roles).where(eq(roles.id, roleId));
-  if (!role) throw new NotFoundError("Rôle introuvable");
+  assertEmbassyRole(role);
 
   const [existing] = await db
     .select()
@@ -129,6 +143,9 @@ export async function removeRoleFromUser(targetUserId: string, roleId: string, c
   if (targetUserId === callerUserId) {
     throw new ForbiddenError("Vous ne pouvez pas retirer votre propre rôle");
   }
+
+  const [roleRow] = await db.select().from(roles).where(eq(roles.id, roleId));
+  assertEmbassyRole(roleRow);
 
   const [existing] = await db
     .select()
