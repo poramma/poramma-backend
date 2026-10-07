@@ -392,7 +392,8 @@ export async function login(
   // refresh token (which embeds this session's id) exists.
   const [session] = await db
     .insert(sessions)
-    .values({ userId: user.id, refreshTokenHash: "pending", ip: "0.0.0.0", userAgent: "unknown", rememberMe })
+    // IP et appareil réels : l'administration (sessions d'un membre) les affiche.
+    .values({ userId: user.id, refreshTokenHash: "pending", ip: ip ?? "0.0.0.0", userAgent: ua ?? "unknown", rememberMe })
     .returning();
 
   const { accessToken, refreshToken } = signTokens(user.id, user.email, session.id, rbac, rememberMe);
