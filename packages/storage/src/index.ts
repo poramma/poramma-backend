@@ -50,6 +50,11 @@ function getBucket(): string {
   return bucket!;
 }
 
+/** Sonde de santé : lève si le stockage ou le bucket est injoignable (ne crée rien). */
+export async function pingStorage(): Promise<void> {
+  await getClient().send(new HeadBucketCommand({ Bucket: getBucket() }));
+}
+
 /** Idempotent — creates the configured bucket if it doesn't exist yet. Call once at service startup. */
 export async function ensureBucket(): Promise<void> {
   const c = getClient();

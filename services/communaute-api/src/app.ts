@@ -11,6 +11,7 @@ import rendezvousRoutes from "./modules/rendezvous/rendezvous.routes";
 import campagnesRoutes, { campagnesMediaRouter } from "./modules/campagnes/campagnes.routes";
 import supportRoutes from "./modules/support/support.routes";
 import cultureRoutes from "./modules/culture/culture.routes";
+import adminRoutes from "./modules/admin/admin.routes";
 
 const app: Express = express();
 
@@ -54,6 +55,8 @@ app.use("/", rendezvousRoutes);
 app.use("/", campagnesRoutes);
 app.use("/", supportRoutes);
 app.use("/", cultureRoutes);
+// Espace d'administration de la plateforme communautaire (permissions community:* uniquement).
+app.use("/", adminRoutes);
 
 // Gestionnaire d'erreurs centralisé — doit rester le dernier middleware.
 app.use(errorHandler);
