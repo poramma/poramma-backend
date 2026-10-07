@@ -277,7 +277,7 @@ async function login(email, password, ip, ua, rememberMe = false, clientApp = "e
     const rbac = await getRbacContext(user.id);
     const [session] = await connection_1.db
         .insert(schema_identity_1.sessions)
-        .values({ userId: user.id, refreshTokenHash: "pending", ip: "0.0.0.0", userAgent: "unknown", rememberMe })
+        .values({ userId: user.id, refreshTokenHash: "pending", ip: ip ?? "0.0.0.0", userAgent: ua ?? "unknown", rememberMe })
         .returning();
     const { accessToken, refreshToken } = signTokens(user.id, user.email, session.id, rbac, rememberMe);
     const refreshHash = await bcryptjs_1.default.hash(refreshToken, 10);
