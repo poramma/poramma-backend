@@ -57,16 +57,19 @@ export declare const updateStatusDto: z.ZodObject<{
     comment: z.ZodString;
     isVisibleToUser: z.ZodBoolean;
     assignedAgentId: z.ZodOptional<z.ZodString>;
+    priority: z.ZodOptional<z.ZodEnum<["LOW", "NORMAL", "HIGH", "URGENT"]>>;
 }, "strip", z.ZodTypeAny, {
     status: "ADDITIONAL_INFO_REQUIRED" | "COMPLETED" | "REJECTED" | "CANCELLED" | "ARCHIVED" | "DRAFT" | "SUBMITTED" | "IN_REVIEW" | "UNDER_VERIFICATION" | "APPROVED";
     comment: string;
     isVisibleToUser: boolean;
     assignedAgentId?: string | undefined;
+    priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | undefined;
 }, {
     status: "ADDITIONAL_INFO_REQUIRED" | "COMPLETED" | "REJECTED" | "CANCELLED" | "ARCHIVED" | "DRAFT" | "SUBMITTED" | "IN_REVIEW" | "UNDER_VERIFICATION" | "APPROVED";
     comment: string;
     isVisibleToUser: boolean;
     assignedAgentId?: string | undefined;
+    priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | undefined;
 }>;
 export declare const assignDto: z.ZodObject<{
     agentId: z.ZodString;

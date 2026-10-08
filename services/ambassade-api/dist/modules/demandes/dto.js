@@ -40,6 +40,7 @@ exports.updateStatusDto = zod_1.z.object({
     comment: zod_1.z.string().min(1),
     isVisibleToUser: zod_1.z.boolean(),
     assignedAgentId: zod_1.z.string().uuid().optional(),
+    priority: priority.optional(),
 });
 exports.assignDto = zod_1.z.object({
     agentId: zod_1.z.string().uuid(),

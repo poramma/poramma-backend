@@ -13,7 +13,13 @@ export interface CreateUrgenceInput {
         phone: string;
         city: string;
     } | null;
+    startTime?: string | null;
+    date?: string | null;
 }
+export declare function listUrgenceSlots(subServiceId: string, date: string): Promise<{
+    startTime: string;
+    endTime: string;
+}[]>;
 export declare function createUrgence(data: CreateUrgenceInput, actor: Actor): Promise<{
     id: string;
     ticketId: string;

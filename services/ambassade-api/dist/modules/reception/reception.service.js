@@ -37,6 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WALKIN_STATUSES = exports.WALKIN_CATEGORIES = void 0;
+exports.listUrgenceSlots = listUrgenceSlots;
 exports.createUrgence = createUrgence;
 exports.listAppointments = listAppointments;
 exports.lookupTicket = lookupTicket;
@@ -123,6 +124,21 @@ function isUniqueViolation(err) {
     const e = err;
     return e?.code === "23505" || e?.cause?.code === "23505";
 }
+async function assertRegisteredMember(userId) {
+    const [row] = await connection_1.db.select({ status: schema_etudiants_1.etudiants.status }).from(schema_etudiants_1.etudiants).where((0, drizzle_orm_1.eq)(schema_etudiants_1.etudiants.userId, userId));
+    if (row?.status !== "VALIDATED") {
+        throw new utils_1.ValidationError("Ce membre n'est pas encore enregistré (profil non validé) : saisissez plutôt son identité comme personne sans compte.", {
+            userId: ["not registered"],
+        });
+    }
+}
+async function listUrgenceSlots(subServiceId, date) {
+    const [sub] = await connection_1.db.select({ id: schema_ambassade_1.subServices.id, active: schema_ambassade_1.subServices.active }).from(schema_ambassade_1.subServices).where((0, drizzle_orm_1.eq)(schema_ambassade_1.subServices.id, subServiceId));
+    if (!sub || sub.active === false)
+        throw new utils_1.NotFoundError("Service introuvable");
+    const slots = await ambassade_core_1.rendezvousLogic.listPublicSlots(connection_1.db, { subServiceId, date });
+    return slots.filter((s) => s.isAvailable).map((s) => ({ startTime: s.startTime, endTime: s.endTime }));
+}
 async function createUrgence(data, actor) {
     if (!data.userId === !data.visitor) {
         throw new utils_1.ValidationError("Indiquez soit un membre de la plateforme, soit l'identité de la personne.", { userId: ["choose one"] });
@@ -133,6 +149,7 @@ async function createUrgence(data, actor) {
     let displayName;
     let phone;
     if (data.userId) {
+        await assertRegisteredMember(data.userId);
         const member = await ambassade_core_1.identityLogic.getUser(connection_1.db, data.userId);
         if (!member)
             throw new utils_1.ValidationError("Membre introuvable", { userId: ["unknown user"] });
@@ -149,14 +166,38 @@ async function createUrgence(data, actor) {
             subServiceId: ["no agent assigned"],
         });
     }
-    const date = today();
+    const now = ambassade_core_1.rendezvousLogic.nowInEmbassyTz();
+    const scheduled = !!data.startTime;
+    const date = scheduled ? (data.date ?? now.date) : now.date;
+    let candidates = agents.map((a) => ({ agentId: a.agentId, slotId: null }));
+    if (scheduled) {
+        const startTime = data.startTime;
+        if (date < now.date)
+            throw new utils_1.ValidationError("Cette date est passée.", { date: ["past date"] });
+        if (date > ambassade_core_1.rendezvousLogic.addDays(now.date, ambassade_core_1.rendezvousLogic.BOOKING_HORIZON_DAYS)) {
+            throw new utils_1.ValidationError("Cette date est trop éloignée.", { date: ["too far"] });
+        }
+        const raw = (await ambassade_core_1.rendezvousLogic.computeSlots(connection_1.db, data.subServiceId, date)).filter((s) => s.startTime === startTime);
+        if (!raw.length)
+            throw new utils_1.ValidationError(`Le service ne reçoit pas à ${startTime} ce jour-là. Choisissez l'un des horaires proposés ou « Immédiatement ».`, { startTime: ["not a service slot"] });
+        if (date === now.date && ambassade_core_1.rendezvousLogic.timeToMinutes(raw[0].endTime) <= now.minutes) {
+            throw new utils_1.ValidationError("Cet horaire est déjà passé. Choisissez un horaire à venir ou « Immédiatement ».", { startTime: ["past"] });
+        }
+        const taken = new Set((await connection_1.db
+            .select({ slotId: schema_rendezvous_1.rendezVous.slotId })
+            .from(schema_rendezvous_1.rendezVous)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_rendezvous_1.rendezVous.slotId, raw.map((s) => s.id)), (0, drizzle_orm_1.sql) `${schema_rendezvous_1.rendezVous.status} not in ('CANCELLED_BY_USER','CANCELLED_BY_AGENT','NO_SHOW')`))).map((r) => r.slotId));
+        candidates = raw.filter((s) => !taken.has(s.id)).map((s) => ({ agentId: s.agentId, slotId: s.id }));
+        if (!candidates.length)
+            throw new utils_1.ConflictError(`Plus aucun créneau libre à ${startTime} pour ce service. Choisissez un autre horaire ou « Immédiatement ».`);
+    }
     const loads = await connection_1.db
         .select({ agentId: schema_rendezvous_1.rendezVous.agentId, n: (0, drizzle_orm_1.sql) `count(*)::int` })
         .from(schema_rendezvous_1.rendezVous)
-        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_rendezvous_1.rendezVous.date, date), (0, drizzle_orm_1.inArray)(schema_rendezvous_1.rendezVous.agentId, agents.map((a) => a.agentId))))
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_rendezvous_1.rendezVous.date, date), (0, drizzle_orm_1.inArray)(schema_rendezvous_1.rendezVous.agentId, candidates.map((c) => c.agentId))))
         .groupBy(schema_rendezvous_1.rendezVous.agentId);
     const load = (id) => loads.find((l) => l.agentId === id)?.n ?? 0;
-    const chosen = [...agents].sort((a, b) => load(a.agentId) - load(b.agentId) || a.agentId.localeCompare(b.agentId))[0];
+    const chosen = [...candidates].sort((a, b) => load(a.agentId) - load(b.agentId) || a.agentId.localeCompare(b.agentId))[0];
     for (let attempt = 0; attempt < 5; attempt++) {
         try {
             const ticketId = await ambassade_core_1.rendezvousLogic.nextTicketId(connection_1.db, date, "URG");
@@ -168,7 +209,7 @@ async function createUrgence(data, actor) {
                 visitor: data.visitor ?? null,
                 subServiceId: data.subServiceId,
                 agentId: chosen.agentId,
-                slotId: null,
+                slotId: chosen.slotId,
                 date,
                 ticketId,
                 type: "URGENCE",
@@ -184,19 +225,28 @@ async function createUrgence(data, actor) {
                 entityType: "RENDEZ_VOUS",
                 entityId: row.id,
                 actor,
-                entitySnapshot: { type: "URGENCE", subServiceId: data.subServiceId, withoutAccount: !data.userId },
+                entitySnapshot: { type: "URGENCE", subServiceId: data.subServiceId, withoutAccount: !data.userId, ...(scheduled ? { date, startTime: data.startTime } : { immediate: true }) },
                 details: { ticketId, atReception: true },
             });
             await notifyServiceAgents(data.subServiceId, {
                 title: `Rendez-vous URGENT — ${sub.name}`,
-                body: `${displayName}${phone ? ` (${phone})` : ""} se présente à l'accueil. Motif : ${data.motif.trim()}. Urgence : ${data.urgenceJustification.trim()} (ticket ${ticketId}).`,
+                body: `${displayName}${phone ? ` (${phone})` : ""} ${scheduled ? `est attendu(e) à l'accueil ${date === now.date ? "aujourd'hui" : `le ${date}`} à ${data.startTime}` : "se présente à l'accueil (à recevoir immédiatement)"}. Motif : ${data.motif.trim()}. Urgence : ${data.urgenceJustification.trim()} (ticket ${ticketId}).`,
                 payload: { rendezVousId: row.id, event: "URGENCE" },
             });
             return ticketView(await rdvService.getRendezVous(row.id));
         }
         catch (err) {
-            if (isUniqueViolation(err))
+            if (isUniqueViolation(err)) {
+                if (chosen.slotId) {
+                    const [taken] = await connection_1.db
+                        .select({ id: schema_rendezvous_1.rendezVous.id })
+                        .from(schema_rendezvous_1.rendezVous)
+                        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_rendezvous_1.rendezVous.slotId, chosen.slotId), (0, drizzle_orm_1.sql) `${schema_rendezvous_1.rendezVous.status} not in ('CANCELLED_BY_USER','CANCELLED_BY_AGENT','NO_SHOW')`));
+                    if (taken)
+                        throw new utils_1.ConflictError("Ce créneau vient d'être pris. Choisissez un autre horaire ou « Immédiatement ».");
+                }
                 continue;
+            }
             throw err;
         }
     }
@@ -322,6 +372,7 @@ async function createWalkIn(data, actor) {
     let visitorName = data.visitorName?.trim() ?? "";
     let phone = data.visitorPhone?.trim() || null;
     if (data.userId) {
+        await assertRegisteredMember(data.userId);
         const member = await ambassade_core_1.identityLogic.getUser(connection_1.db, data.userId);
         if (!member)
             throw new utils_1.ValidationError("Membre introuvable", { userId: ["unknown user"] });
@@ -519,8 +570,8 @@ async function searchMembers(query) {
     })
         .from(schema_identity_readonly_1.identityUsers)
         .leftJoin(schema_identity_readonly_1.identityUserProfiles, (0, drizzle_orm_1.eq)(schema_identity_readonly_1.identityUserProfiles.userId, schema_identity_readonly_1.identityUsers.id))
-        .leftJoin(schema_etudiants_1.etudiants, (0, drizzle_orm_1.eq)(schema_etudiants_1.etudiants.userId, schema_identity_readonly_1.identityUsers.id))
-        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.sql) `not exists (select 1 from identity.agents a where a.user_id = ${schema_identity_readonly_1.identityUsers.id})`, (0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUsers.email, s), (0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUsers.phone, s), (0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUserProfiles.firstName, s), (0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUserProfiles.lastName, s), (0, drizzle_orm_1.ilike)((0, drizzle_orm_1.sql) `concat(${schema_identity_readonly_1.identityUserProfiles.firstName}, ' ', ${schema_identity_readonly_1.identityUserProfiles.lastName})`, s), (0, drizzle_orm_1.ilike)(schema_etudiants_1.etudiants.inue, s))))
+        .innerJoin(schema_etudiants_1.etudiants, (0, drizzle_orm_1.eq)(schema_etudiants_1.etudiants.userId, schema_identity_readonly_1.identityUsers.id))
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_etudiants_1.etudiants.status, "VALIDATED"), (0, drizzle_orm_1.sql) `not exists (select 1 from identity.agents a where a.user_id = ${schema_identity_readonly_1.identityUsers.id})`, (0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUsers.email, s), (0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUsers.phone, s), (0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUserProfiles.firstName, s), (0, drizzle_orm_1.ilike)(schema_identity_readonly_1.identityUserProfiles.lastName, s), (0, drizzle_orm_1.ilike)((0, drizzle_orm_1.sql) `concat(${schema_identity_readonly_1.identityUserProfiles.firstName}, ' ', ${schema_identity_readonly_1.identityUserProfiles.lastName})`, s), (0, drizzle_orm_1.ilike)(schema_etudiants_1.etudiants.inue, s))))
         .limit(8);
     return rows.map((r) => ({
         id: r.id,

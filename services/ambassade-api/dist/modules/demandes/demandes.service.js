@@ -145,6 +145,10 @@ async function updateStatus(id, payload, actor) {
     }
     if (payload.status === "COMPLETED")
         patch.completedAt = new Date();
+    const PRIORITY_RANK = { LOW: 0, NORMAL: 1, HIGH: 2, URGENT: 3 };
+    const raisedPriority = payload.priority && (PRIORITY_RANK[payload.priority] ?? 0) > (PRIORITY_RANK[existing.priority] ?? 0) ? payload.priority : null;
+    if (raisedPriority)
+        patch.priority = raisedPriority;
     const [updated] = await connection_1.db.update(schema_demandes_1.demandes).set(patch).where((0, drizzle_orm_1.eq)(schema_demandes_1.demandes.id, id)).returning();
     await connection_1.db.insert(schema_demandes_1.demandeHistories).values({
         id: newId("hist"),
@@ -163,7 +167,7 @@ async function updateStatus(id, payload, actor) {
         entityType: "DEMANDE",
         entityId: id,
         actor,
-        entitySnapshot: { fromStatus: existing.status, toStatus: payload.status },
+        entitySnapshot: { fromStatus: existing.status, toStatus: payload.status, ...(raisedPriority ? { fromPriority: existing.priority, toPriority: raisedPriority } : {}) },
         details: { comment: payload.comment },
     });
     const enriched = await enrichDemande(updated);

@@ -8,5 +8,6 @@ export declare function createWalkIn(req: Request, res: Response): Promise<void>
 export declare function updateWalkIn(req: Request, res: Response): Promise<void>;
 export declare function createDossier(req: Request, res: Response): Promise<void>;
 export declare function createUrgence(req: Request, res: Response): Promise<void>;
+export declare function urgenceSlots(req: Request, res: Response): Promise<void>;
 export declare function searchMembers(req: Request, res: Response): Promise<void>;
 //# sourceMappingURL=reception.controller.d.ts.map

@@ -331,6 +331,7 @@ export declare function updateStatus(id: string, payload: {
     comment: string;
     isVisibleToUser: boolean;
     assignedAgentId?: string;
+    priority?: string;
 }, actor: Actor): Promise<{
     totalAmount: number | null;
     user: {
