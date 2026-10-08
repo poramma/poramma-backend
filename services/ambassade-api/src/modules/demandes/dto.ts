@@ -43,6 +43,8 @@ export const updateStatusDto = z.object({
   comment: z.string().min(1),
   isVisibleToUser: z.boolean(),
   assignedAgentId: z.string().uuid().optional(),
+  // Escalade : relève la priorité du dossier (jamais l'abaisse — voir updateStatus).
+  priority: priority.optional(),
 });
 
 export const assignDto = z.object({

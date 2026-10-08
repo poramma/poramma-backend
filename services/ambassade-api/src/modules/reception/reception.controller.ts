@@ -56,8 +56,14 @@ const createUrgenceDto = z
     urgenceJustification: z.string().trim().min(3, "Justifiez l'urgence").max(1000),
     userId: z.string().uuid().nullable().optional(),
     visitor: visitorDto.nullable().optional(),
+    // Absent = « immédiatement » ; sinon un créneau du service (HH:MM), le jour `date` (aujourd'hui par défaut).
+    startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure invalide").nullable().optional(),
+    date: z.string().regex(dateRe).nullable().optional(),
   })
-  .refine((v) => !!v.userId !== !!v.visitor, { message: "Indiquez un membre OU l'identité de la personne", path: ["userId"] });
+  .refine((v) => !!v.userId !== !!v.visitor, { message: "Indiquez un membre OU l'identité de la personne", path: ["userId"] })
+  .refine((v) => !v.date || !!v.startTime, { message: "Précisez l'heure du rendez-vous", path: ["startTime"] });
+
+const urgenceSlotsQueryDto = z.object({ subServiceId: z.string().min(1), date: z.string().regex(dateRe) });
 
 const membersQueryDto = z.object({ q: z.string().trim().min(2, "Saisissez au moins 2 caractères").max(100) });
 
@@ -113,6 +119,12 @@ export async function createUrgence(req: Request, res: Response) {
   const parsed = createUrgenceDto.safeParse(req.body);
   if (!parsed.success) throw new ValidationError("Données invalides", zodDetails(parsed.error));
   res.status(201).json(ok(await svc.createUrgence(parsed.data, actorOf(req)), undefined, "Rendez-vous d'urgence créé : les agents du service sont prévenus."));
+}
+
+export async function urgenceSlots(req: Request, res: Response) {
+  const parsed = urgenceSlotsQueryDto.safeParse(req.query);
+  if (!parsed.success) throw new ValidationError("Paramètres invalides", zodDetails(parsed.error));
+  res.json(ok(await svc.listUrgenceSlots(parsed.data.subServiceId, parsed.data.date)));
 }
 
 export async function searchMembers(req: Request, res: Response) {
