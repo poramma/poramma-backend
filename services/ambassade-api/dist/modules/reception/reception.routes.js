@@ -10,6 +10,7 @@ router.get("/reception/summary", (0, middleware_1.requirePermission)("walkin:rea
 router.get("/reception/appointments", (0, middleware_1.requirePermission)("rdv:checkin"), (0, utils_1.asyncHandler)(reception_controller_1.listAppointments));
 router.get("/reception/appointments/lookup", (0, middleware_1.requirePermission)("rdv:checkin"), (0, utils_1.asyncHandler)(reception_controller_1.lookupTicket));
 router.post("/reception/appointments/:id/validate", (0, middleware_1.requirePermission)("rdv:checkin"), (0, utils_1.asyncHandler)(reception_controller_1.validateArrival));
+router.get("/reception/urgences/slots", (0, middleware_1.requirePermission)("rdv:create-urgence"), (0, utils_1.asyncHandler)(reception_controller_1.urgenceSlots));
 router.post("/reception/urgences", (0, middleware_1.requirePermission)("rdv:create-urgence"), (0, utils_1.asyncHandler)(reception_controller_1.createUrgence));
 router.get("/reception/walk-ins", (0, middleware_1.requirePermission)("walkin:read"), (0, utils_1.asyncHandler)(reception_controller_1.listWalkIns));
 router.post("/reception/walk-ins", (0, middleware_1.requirePermission)("walkin:manage"), (0, utils_1.asyncHandler)(reception_controller_1.createWalkIn));

@@ -108,6 +108,12 @@ export interface CreateUrgenceInput {
   userId?: string | null;
   /** …ou personne sans compte : identité minimale. */
   visitor?: { lastName: string; firstName: string; phone: string; city: string } | null;
+  /**
+   * Horaire : absent = « immédiatement » (reçu maintenant, sans créneau). Sinon un créneau du service (HH:MM), le jour
+   * `date` (aujourd'hui par défaut) : il est alors réservé comme un rendez-vous ordinaire, auprès d'un agent libre à cette heure.
+   */
+  startTime?: string | null;
+  date?: string | null;
 }
 
 function isUniqueViolation(err: unknown): boolean {
@@ -115,9 +121,33 @@ function isUniqueViolation(err: unknown): boolean {
   return e?.code === "23505" || e?.cause?.code === "23505";
 }
 
+/** Seul un membre dont le profil est VALIDÉ (enregistré, doté d'un INUE) peut être rattaché à l'accueil. */
+async function assertRegisteredMember(userId: string) {
+  const [row] = await db.select({ status: etudiants.status }).from(etudiants).where(eq(etudiants.userId, userId));
+  if (row?.status !== "VALIDATED") {
+    throw new ValidationError("Ce membre n'est pas encore enregistré (profil non validé) : saisissez plutôt son identité comme personne sans compte.", {
+      userId: ["not registered"],
+    });
+  }
+}
+
 /**
- * Rendez-vous d'urgence pris à l'accueil, sans créneau. La personne peut ne pas avoir de compte : on saisit alors
- * nom, prénom, téléphone et ville. L'agent le moins chargé du jour en est titulaire, et TOUS les agents du service sont prévenus.
+ * Créneaux d'un service pour un jour donné, tels que l'accueil peut les proposer pour une urgence : les horaires du
+ * service (agents disponibles, hors fermetures), sans les heures déjà passées ni les créneaux déjà pris.
+ */
+export async function listUrgenceSlots(subServiceId: string, date: string) {
+  const [sub] = await db.select({ id: subServices.id, active: subServices.active }).from(subServices).where(eq(subServices.id, subServiceId));
+  if (!sub || sub.active === false) throw new NotFoundError("Service introuvable");
+  const slots = await rendezvousLogic.listPublicSlots(db, { subServiceId, date });
+  return slots.filter((s) => s.isAvailable).map((s) => ({ startTime: s.startTime, endTime: s.endTime }));
+}
+
+/**
+ * Rendez-vous d'urgence pris à l'accueil. La personne peut ne pas avoir de compte : on saisit alors nom, prénom,
+ * téléphone et ville. Deux modes d'horaire :
+ *   - immédiat : sans créneau, l'agent le moins chargé du jour en est titulaire ;
+ *   - sur un créneau du service : le créneau est réservé (l'agent libre le moins chargé à cette heure).
+ * Dans les deux cas TOUS les agents du service sont prévenus.
  */
 export async function createUrgence(data: CreateUrgenceInput, actor: Actor) {
   if (!data.userId === !data.visitor) {
@@ -129,6 +159,7 @@ export async function createUrgence(data: CreateUrgenceInput, actor: Actor) {
   let displayName: string;
   let phone: string | null;
   if (data.userId) {
+    await assertRegisteredMember(data.userId);
     const member = await identityLogic.getUser(db, data.userId);
     if (!member) throw new ValidationError("Membre introuvable", { userId: ["unknown user"] });
     displayName = fullName(member);
@@ -144,15 +175,44 @@ export async function createUrgence(data: CreateUrgenceInput, actor: Actor) {
       subServiceId: ["no agent assigned"],
     });
   }
-  // Répartition équitable : l'agent qui a le moins de rendez-vous aujourd'hui.
-  const date = today();
+
+  const now = rendezvousLogic.nowInEmbassyTz();
+  const scheduled = !!data.startTime;
+  const date = scheduled ? (data.date ?? now.date) : now.date;
+
+  // Candidats à la titularité : tous les agents du service (immédiat) ou ceux libres sur le créneau demandé.
+  let candidates: { agentId: string; slotId: string | null }[] = agents.map((a) => ({ agentId: a.agentId, slotId: null }));
+  if (scheduled) {
+    const startTime = data.startTime!;
+    if (date < now.date) throw new ValidationError("Cette date est passée.", { date: ["past date"] });
+    if (date > rendezvousLogic.addDays(now.date, rendezvousLogic.BOOKING_HORIZON_DAYS)) {
+      throw new ValidationError("Cette date est trop éloignée.", { date: ["too far"] });
+    }
+    const raw = (await rendezvousLogic.computeSlots(db, data.subServiceId, date)).filter((s) => s.startTime === startTime);
+    if (!raw.length) throw new ValidationError(`Le service ne reçoit pas à ${startTime} ce jour-là. Choisissez l'un des horaires proposés ou « Immédiatement ».`, { startTime: ["not a service slot"] });
+    if (date === now.date && rendezvousLogic.timeToMinutes(raw[0].endTime) <= now.minutes) {
+      throw new ValidationError("Cet horaire est déjà passé. Choisissez un horaire à venir ou « Immédiatement ».", { startTime: ["past"] });
+    }
+    const taken = new Set(
+      (
+        await db
+          .select({ slotId: rendezVous.slotId })
+          .from(rendezVous)
+          .where(and(inArray(rendezVous.slotId, raw.map((s) => s.id)), sql`${rendezVous.status} not in ('CANCELLED_BY_USER','CANCELLED_BY_AGENT','NO_SHOW')`))
+      ).map((r) => r.slotId)
+    );
+    candidates = raw.filter((s) => !taken.has(s.id)).map((s) => ({ agentId: s.agentId, slotId: s.id }));
+    if (!candidates.length) throw new ConflictError(`Plus aucun créneau libre à ${startTime} pour ce service. Choisissez un autre horaire ou « Immédiatement ».`);
+  }
+
+  // Répartition équitable : l'agent qui a le moins de rendez-vous ce jour-là.
   const loads = await db
     .select({ agentId: rendezVous.agentId, n: sql<number>`count(*)::int` })
     .from(rendezVous)
-    .where(and(eq(rendezVous.date, date), inArray(rendezVous.agentId, agents.map((a) => a.agentId))))
+    .where(and(eq(rendezVous.date, date), inArray(rendezVous.agentId, candidates.map((c) => c.agentId))))
     .groupBy(rendezVous.agentId);
   const load = (id: string) => loads.find((l) => l.agentId === id)?.n ?? 0;
-  const chosen = [...agents].sort((a, b) => load(a.agentId) - load(b.agentId) || a.agentId.localeCompare(b.agentId))[0];
+  const chosen = [...candidates].sort((a, b) => load(a.agentId) - load(b.agentId) || a.agentId.localeCompare(b.agentId))[0];
 
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
@@ -165,7 +225,7 @@ export async function createUrgence(data: CreateUrgenceInput, actor: Actor) {
           visitor: data.visitor ?? null,
           subServiceId: data.subServiceId,
           agentId: chosen.agentId,
-          slotId: null,
+          slotId: chosen.slotId,
           date,
           ticketId,
           type: "URGENCE",
@@ -182,18 +242,28 @@ export async function createUrgence(data: CreateUrgenceInput, actor: Actor) {
         entityType: "RENDEZ_VOUS",
         entityId: row.id,
         actor,
-        entitySnapshot: { type: "URGENCE", subServiceId: data.subServiceId, withoutAccount: !data.userId },
+        entitySnapshot: { type: "URGENCE", subServiceId: data.subServiceId, withoutAccount: !data.userId, ...(scheduled ? { date, startTime: data.startTime } : { immediate: true }) },
         details: { ticketId, atReception: true },
       });
 
       await notifyServiceAgents(data.subServiceId, {
         title: `Rendez-vous URGENT — ${sub.name}`,
-        body: `${displayName}${phone ? ` (${phone})` : ""} se présente à l'accueil. Motif : ${data.motif.trim()}. Urgence : ${data.urgenceJustification.trim()} (ticket ${ticketId}).`,
+        body: `${displayName}${phone ? ` (${phone})` : ""} ${scheduled ? `est attendu(e) à l'accueil ${date === now.date ? "aujourd'hui" : `le ${date}`} à ${data.startTime}` : "se présente à l'accueil (à recevoir immédiatement)"}. Motif : ${data.motif.trim()}. Urgence : ${data.urgenceJustification.trim()} (ticket ${ticketId}).`,
         payload: { rendezVousId: row.id, event: "URGENCE" },
       });
       return ticketView(await rdvService.getRendezVous(row.id));
     } catch (err) {
-      if (isUniqueViolation(err)) continue; // deux urgences simultanées : le numéro de ticket est repris
+      if (isUniqueViolation(err)) {
+        // Le créneau vient d'être pris par une autre réservation : inutile de réessayer avec le même.
+        if (chosen.slotId) {
+          const [taken] = await db
+            .select({ id: rendezVous.id })
+            .from(rendezVous)
+            .where(and(eq(rendezVous.slotId, chosen.slotId), sql`${rendezVous.status} not in ('CANCELLED_BY_USER','CANCELLED_BY_AGENT','NO_SHOW')`));
+          if (taken) throw new ConflictError("Ce créneau vient d'être pris. Choisissez un autre horaire ou « Immédiatement ».");
+        }
+        continue; // deux urgences simultanées : le numéro de ticket est repris
+      }
       throw err;
     }
   }
@@ -350,6 +420,7 @@ export async function createWalkIn(data: CreateWalkInInput, actor: Actor) {
   let phone = data.visitorPhone?.trim() || null;
 
   if (data.userId) {
+    await assertRegisteredMember(data.userId);
     const member = await identityLogic.getUser(db, data.userId);
     if (!member) throw new ValidationError("Membre introuvable", { userId: ["unknown user"] });
     visitorName = visitorName || fullName(member);
@@ -545,7 +616,10 @@ export async function summary() {
 
 // ── Recherche d'un membre à rattacher ────────────────────────────────────
 
-/** Recherche un compte membre (nom, e-mail, téléphone, INUE) — jamais un compte du personnel. */
+/**
+ * Recherche un membre ENREGISTRÉ (profil validé, donc doté d'un INUE) par nom, e-mail, téléphone ou INUE — jamais un
+ * compte du personnel, jamais un compte dont l'inscription n'est pas validée (la personne est alors saisie comme « sans compte »).
+ */
 export async function searchMembers(query: string) {
   const s = `%${query.trim()}%`;
   const rows = await db
@@ -560,9 +634,10 @@ export async function searchMembers(query: string) {
     })
     .from(identityUsers)
     .leftJoin(identityUserProfiles, eq(identityUserProfiles.userId, identityUsers.id))
-    .leftJoin(etudiants, eq(etudiants.userId, identityUsers.id))
+    .innerJoin(etudiants, eq(etudiants.userId, identityUsers.id))
     .where(
       and(
+        eq(etudiants.status, "VALIDATED"),
         sql`not exists (select 1 from identity.agents a where a.user_id = ${identityUsers.id})`,
         or(
           ilike(identityUsers.email, s),

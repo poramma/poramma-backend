@@ -154,7 +154,7 @@ export async function createDemande(data: Parameters<typeof demandesLogic.create
  */
 export async function updateStatus(
   id: string,
-  payload: { status: string; comment: string; isVisibleToUser: boolean; assignedAgentId?: string },
+  payload: { status: string; comment: string; isVisibleToUser: boolean; assignedAgentId?: string; priority?: string },
   actor: Actor
 ) {
   const [existing] = await db.select().from(demandes).where(eq(demandes.id, id));
@@ -180,6 +180,11 @@ export async function updateStatus(
     patch.assignedAt = new Date();
   }
   if (payload.status === "COMPLETED") patch.completedAt = new Date();
+  // Escalade : on relève la priorité, on ne l'abaisse jamais (une demande déjà « Urgente » le reste).
+  const PRIORITY_RANK: Record<string, number> = { LOW: 0, NORMAL: 1, HIGH: 2, URGENT: 3 };
+  const raisedPriority =
+    payload.priority && (PRIORITY_RANK[payload.priority] ?? 0) > (PRIORITY_RANK[existing.priority] ?? 0) ? payload.priority : null;
+  if (raisedPriority) patch.priority = raisedPriority;
 
   const [updated] = await db.update(demandes).set(patch).where(eq(demandes.id, id)).returning();
 
@@ -201,7 +206,7 @@ export async function updateStatus(
     entityType: "DEMANDE",
     entityId: id,
     actor,
-    entitySnapshot: { fromStatus: existing.status, toStatus: payload.status },
+    entitySnapshot: { fromStatus: existing.status, toStatus: payload.status, ...(raisedPriority ? { fromPriority: existing.priority, toPriority: raisedPriority } : {}) },
     details: { comment: payload.comment },
   });
 

@@ -9,6 +9,7 @@ import {
   updateWalkIn,
   createDossier,
   createUrgence,
+  urgenceSlots,
   searchMembers,
 } from "./reception.controller";
 import { requireAuth, requirePermission } from "../../shared/middleware";
@@ -26,6 +27,7 @@ router.get("/reception/appointments/lookup", requirePermission("rdv:checkin"), a
 router.post("/reception/appointments/:id/validate", requirePermission("rdv:checkin"), asyncHandler(validateArrival));
 
 // Rendez-vous d'urgence pris à l'accueil (membre ou personne sans compte) — permission historique de l'urgence.
+router.get("/reception/urgences/slots", requirePermission("rdv:create-urgence"), asyncHandler(urgenceSlots));
 router.post("/reception/urgences", requirePermission("rdv:create-urgence"), asyncHandler(createUrgence));
 
 // Registre des demandes sur place.

@@ -42,6 +42,7 @@ exports.createWalkIn = createWalkIn;
 exports.updateWalkIn = updateWalkIn;
 exports.createDossier = createDossier;
 exports.createUrgence = createUrgence;
+exports.urgenceSlots = urgenceSlots;
 exports.searchMembers = searchMembers;
 const zod_1 = require("zod");
 const dto_1 = require("@poramma/dto");
@@ -91,8 +92,12 @@ const createUrgenceDto = zod_1.z
     urgenceJustification: zod_1.z.string().trim().min(3, "Justifiez l'urgence").max(1000),
     userId: zod_1.z.string().uuid().nullable().optional(),
     visitor: visitorDto.nullable().optional(),
+    startTime: zod_1.z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure invalide").nullable().optional(),
+    date: zod_1.z.string().regex(dateRe).nullable().optional(),
 })
-    .refine((v) => !!v.userId !== !!v.visitor, { message: "Indiquez un membre OU l'identité de la personne", path: ["userId"] });
+    .refine((v) => !!v.userId !== !!v.visitor, { message: "Indiquez un membre OU l'identité de la personne", path: ["userId"] })
+    .refine((v) => !v.date || !!v.startTime, { message: "Précisez l'heure du rendez-vous", path: ["startTime"] });
+const urgenceSlotsQueryDto = zod_1.z.object({ subServiceId: zod_1.z.string().min(1), date: zod_1.z.string().regex(dateRe) });
 const membersQueryDto = zod_1.z.object({ q: zod_1.z.string().trim().min(2, "Saisissez au moins 2 caractères").max(100) });
 function zodDetails(error) {
     return error.flatten().fieldErrors;
@@ -142,6 +147,12 @@ async function createUrgence(req, res) {
     if (!parsed.success)
         throw new utils_1.ValidationError("Données invalides", zodDetails(parsed.error));
     res.status(201).json((0, dto_1.ok)(await svc.createUrgence(parsed.data, actorOf(req)), undefined, "Rendez-vous d'urgence créé : les agents du service sont prévenus."));
+}
+async function urgenceSlots(req, res) {
+    const parsed = urgenceSlotsQueryDto.safeParse(req.query);
+    if (!parsed.success)
+        throw new utils_1.ValidationError("Paramètres invalides", zodDetails(parsed.error));
+    res.json((0, dto_1.ok)(await svc.listUrgenceSlots(parsed.data.subServiceId, parsed.data.date)));
 }
 async function searchMembers(req, res) {
     const parsed = membersQueryDto.safeParse(req.query);
